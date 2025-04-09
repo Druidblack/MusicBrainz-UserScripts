@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MusicBrainz: Import from Yandex Music
 // @description Импорт релизов из Яндекс.Музыки
-// @version     2025.01.00.0
+// @version     2025.01.00.1
 // @author		Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -134,7 +134,7 @@
     add_field("country", country);
     add_field("status", "official");
     add_field("type", type);
-    add_field("edit_note", "Imported from: " + document.location.href + " using modified script for Yandex Music");
+    add_field("edit_note", "Imported from: " + document.location.href + " using script for Yandex Music https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album.user.js");
     add_field("urls.0.link_type", "980");
     add_field("urls.0.url", document.location.href);
 
