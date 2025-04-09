@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name        MusicBrainz: Import from Yandex Music
-// @description Импорт релизов из Яндекс.Музыки
-// @version     2025.01.00.1
-// @author		Druidblack
+// @name        MusicBrainz: Import and Search from Yandex Music
+// @description Для страниц альбомов – импорт релиза в MusicBrainz и поиск; для страниц исполнителей – поиска исполнителя на MusicBrainz.
+// @version     2025.01.00.2
+// @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
-// @include     *://music.yandex.ru/album/*
+// @include     *://music.yandex.ru/*
 //
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js
 // @require     https://gist.github.com/raw/2625891/waitForKeyElements.js
@@ -15,81 +15,73 @@
 // @icon        https://musicbrainz.org/favicon.ico
 //
 // @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album.user.js
-// @updateURL     https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album.user.js
+// @updateURL   https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album.user.js
 // ==/UserScript==
 
 (function() {
   // Изолируем нашу копию jQuery
   var myJQ = jQuery.noConflict(true);
 
-  // Объявляем переменные
+  // Переменные для страниц альбомов
   var myform = document.createElement("form");
   var album = '', year = 0, country = 'XW', type = 'album';
+  var artistList = [];
   var m;
   var buttons;
-  var artistList = [];
 
   myJQ(document).ready(function(){
+    // Ждем появления контейнера для кнопок – он есть на обеих страницах
     waitForKeyElements(".d-generic-page-head__main-actions", run);
   });
 
   function run() {
-    if (m = /^https?:\/\/music\.yandex\.ru\/album\/(\d+)/.exec(document.location.href)) {
+    var url = document.location.href;
+    if (/\/album\//.test(url)) {
       extractYandexAlbum();
+    }
+    else if (/\/artist\//.test(url)) {
+      extractYandexArtist();
     }
   }
 
+  // Функция для страницы альбома
   function extractYandexAlbum() {
     myform.innerHTML = '';
 
     // Извлекаем название альбома
     album = myJQ(".page-album__title span.deco-typo").first().text().trim();
-    if (!album) {
-      album = myJQ(".page-album__title").text().trim();
-    }
+    if (!album) { album = myJQ(".page-album__title").text().trim(); }
 
-    // Определяем тип релиза по тексту из элемента
+    // Определяем тип релиза
     var typeText = myJQ(".page-album__types .stamp__entity").first().text().trim();
-    if (typeText.indexOf("Сингл") !== -1) {
-      type = "Single";
-    } else if (typeText.indexOf("Альбом") !== -1) {
-      type = "Album";
-    } else {
-      type = "Album";
-    }
+    if (typeText.indexOf("Сингл") !== -1) { type = "Single"; }
+    else if (typeText.indexOf("Альбом") !== -1) { type = "Album"; }
+    else { type = "Album"; }
 
-    // Извлекаем исполнителей для релиза
+    // Извлекаем исполнителей для альбома
     artistList = [];
     myJQ(".d-artists-many .d-artists a.d-link, .page-album__artists-short a.d-link").each(function(){
       var name = myJQ(this).text().trim();
-      if (name) {
-        artistList.push(name);
-      }
+      if (name) { artistList.push(name); }
     });
     if (artistList.length === 0) {
       var fallback = myJQ(".page-album__artist").text().trim() || myJQ("a.album__artist").text().trim();
-      if (fallback) {
-        artistList.push(fallback);
-      }
+      if (fallback) { artistList.push(fallback); }
     }
 
     // Извлекаем название лейбла
     var label = myJQ(".page-album__label a.d-link").text().trim();
 
-    // Извлекаем год релиза (используем .page-album__year или span.typo.deco-typo-secondary)
+    // Извлекаем год релиза (используя .page-album__year или span.typo.deco-typo-secondary)
     var releaseYearText = myJQ(".page-album__year, span.typo.deco-typo-secondary").first().text().trim();
     if (releaseYearText) {
       var match = releaseYearText.match(/\d{4}/);
-      if (match) {
-        year = match[0];
-      }
+      if (match) { year = match[0]; }
     }
 
-    // Извлекаем annotation (например, deluxe edition)
+    // Извлекаем annotation (например, "deluxe edition")
     var annotationText = myJQ(".page-album__version.link").text().trim();
-    if (annotationText) {
-      add_field("annotation", annotationText);
-    }
+    if (annotationText) { add_field("annotation", annotationText); }
 
     // Извлечение списка треков
     var trackElements = myJQ(".d-track");
@@ -100,12 +92,10 @@
       var trackNumber = myJQ(this).find(".d-track__id").text().trim();
       var trackTitle = myJQ(this).find(".d-track__name .d-track__title").text().trim();
       var durationStr = myJQ(this).find(".d-track__duration").text().trim();
-      if (!durationStr) {
-        durationStr = myJQ(this).find(".d-track__info span.typo-track").text().trim();
-      }
+      if (!durationStr) { durationStr = myJQ(this).find(".d-track__info span.typo-track").text().trim(); }
       var trackDuration = parseDuration(durationStr);
 
-      // Если позиция не нужна, эту строку можно закомментировать:
+      // Если позиция не требуется, можно закомментировать следующую строку
       // if (trackNumber) { add_field("mediums.0.track." + index + ".position", trackNumber); }
 
       add_field("mediums.0.track." + index + ".name", trackTitle);
@@ -113,9 +103,7 @@
       var trackArtists = [];
       myJQ(this).find(".d-track__artists a.deco-link").each(function(){
         var ta = myJQ(this).text().trim();
-        if (ta) {
-          trackArtists.push(ta);
-        }
+        if (ta) { trackArtists.push(ta); }
       });
       for (var j = 0; j < trackArtists.length; j++) {
         add_field("mediums.0.track." + index + ".artist_credit.names." + j + ".name", trackArtists[j]);
@@ -134,11 +122,11 @@
     add_field("country", country);
     add_field("status", "official");
     add_field("type", type);
-    add_field("edit_note", "Imported from: " + document.location.href + " using script for Yandex Music https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album.user.js");
-    add_field("urls.0.link_type", "980");
+    add_field("edit_note", "Imported from: " + document.location.href + " using script from https://github.com/Druidblack/MusicBrainz-UserScripts");
+    add_field("urls.0.link_type", "980");  // При необходимости, замените на нужное значение
     add_field("urls.0.url", document.location.href);
 
-    // Создаем контейнер для кнопок и настраиваем его как flex-контейнер
+    // Создаем контейнер для кнопок и вставляем его в блок .d-generic-page-head__main-actions
     buttons = document.createElement("div");
     buttons.classList.add("button-content");
     buttons.style.display = "flex";
@@ -148,28 +136,31 @@
     buttons.style.marginLeft = "10px";
     myJQ(".d-generic-page-head__main-actions").append(buttons);
 
-    // Сначала кнопка импорта, затем кнопка поиска
+    // Сначала кнопка импорта, затем кнопка поиска по релизу
     addImportButton();
     addSearchButton();
   }
 
-  function parseDuration(durationStr) {
-    var parts = durationStr.split(":");
-    if (parts.length !== 2) return 0;
-    var minutes = parseInt(parts[0], 10);
-    var seconds = parseInt(parts[1], 10);
-    return ((minutes * 60) + seconds) * 1000;
+  // Функция для страницы исполнителя: извлекает имя исполнителя и создает кнопку поиска по исполнителю
+  function extractYandexArtist() {
+    var artistName = myJQ("h1.page-artist__title.typo-h1.typo-h1_big").first().text().trim();
+    if (!artistName) return;
+
+    // Создаем контейнер для кнопок, если его еще нет
+    buttons = document.createElement("div");
+    buttons.classList.add("button-content");
+    buttons.style.display = "flex";
+    buttons.style.flexDirection = "row";
+    buttons.style.gap = "10px";
+    buttons.style.alignItems = "center";
+    buttons.style.marginLeft = "10px";
+    myJQ(".d-generic-page-head__main-actions").append(buttons);
+
+    // Добавляем кнопку поиска исполнителя
+    addArtistSearchButton(artistName);
   }
 
-  function add_field(name, value) {
-    var field = document.createElement("input");
-    field.type = "hidden";
-    field.name = name;
-    field.value = value;
-    myform.appendChild(field);
-  }
-
-  // Функция для создания кнопки поиска на MusicBrainz с inline-стилями
+  // Функция для создания кнопки поиска релиза (для альбомов) с inline-стилями
   function addSearchButton() {
     var searchLinkP = document.createElement("div");
     var searchLink = document.createElement("a");
@@ -181,7 +172,7 @@
     searchLink.setAttribute("href", searchUrl);
     searchLink.setAttribute("target", "_blank");
 
-    // Inline-стили для кнопки поиска
+    // Inline-стили для кнопки поиска (альбомов)
     searchLink.style.backgroundColor = "#ffdb4d";
     searchLink.style.borderRadius = "20px";
     searchLink.style.color = "#121212";
@@ -198,7 +189,42 @@
       searchLink.style.backgroundColor = "#ffdb4d";
     });
 
-    searchLink.classList.add("artLink", "round-button", "typography-label", "is-pill", "typ-label");
+    searchLink.addEventListener("click", function(event) { event.stopPropagation(); });
+    searchLink.appendChild(searchLinkSpan);
+    searchLinkP.appendChild(searchLink);
+    searchLinkP.classList.add("artLink");
+    buttons.appendChild(searchLinkP);
+  }
+
+  // Функция для создания кнопки поиска исполнителя с inline-стилями
+  function addArtistSearchButton(artistName) {
+    var searchLinkP = document.createElement("div");
+    var searchLink = document.createElement("a");
+    var searchLinkSpan = document.createElement("span");
+    searchLinkSpan.textContent = "Search Artist on MusicBrainz";
+    searchLinkSpan.classList.add("btn-text");
+
+    var searchUrl = "https://musicbrainz.org/search?query=" + encodeURIComponent(artistName) + "&type=artist";
+    searchLink.setAttribute("href", searchUrl);
+    searchLink.setAttribute("target", "_blank");
+
+    // Inline-стили для кнопки поиска исполнителя
+    searchLink.style.backgroundColor = "#ffdb4d";
+    searchLink.style.borderRadius = "20px";
+    searchLink.style.color = "#121212";
+    searchLink.style.padding = "10px 20px";
+    searchLink.style.fontSize = "15px";
+    searchLink.style.textDecoration = "none";
+    searchLink.style.display = "inline-block";
+    searchLink.style.transition = "background-color 0.3s ease";
+
+    searchLink.addEventListener("mouseover", function() {
+      searchLink.style.backgroundColor = "#ffd435";
+    });
+    searchLink.addEventListener("mouseout", function() {
+      searchLink.style.backgroundColor = "#ffdb4d";
+    });
+
     searchLink.addEventListener("click", function(event) { event.stopPropagation(); });
     searchLink.appendChild(searchLinkSpan);
     searchLinkP.appendChild(searchLink);
@@ -239,5 +265,21 @@
     div.classList.add("mbForm");
     div.appendChild(myform);
     buttons.appendChild(div);
+  }
+
+  function parseDuration(durationStr) {
+    var parts = durationStr.split(":");
+    if (parts.length !== 2) return 0;
+    var minutes = parseInt(parts[0], 10);
+    var seconds = parseInt(parts[1], 10);
+    return ((minutes * 60) + seconds) * 1000;
+  }
+
+  function add_field(name, value) {
+    var field = document.createElement("input");
+    field.type = "hidden";
+    field.name = name;
+    field.value = value;
+    myform.appendChild(field);
   }
 })();
