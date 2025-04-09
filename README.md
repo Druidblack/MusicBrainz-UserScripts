@@ -15,6 +15,7 @@ To use these userscripts, you need a userscript add-on or extension such as [Tam
 ![yandexbrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandexbrainz.png)
 
 ![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20album.jpg)
+![yandexbrainz artist](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20artist.jpg)
 
 One-click importing of album from music.yandex.ru into MusicBrainz
 
