@@ -14,6 +14,8 @@
 // @grant       none
 // @icon        https://musicbrainz.org/favicon.ico
 //
+// @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album.user.js
+// @updateURL     https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album.user.js
 // ==/UserScript==
 
 (function() {
