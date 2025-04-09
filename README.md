@@ -11,9 +11,12 @@ Collection of my MusicBrainz Userscripts
 
 To use these userscripts, you need a userscript add-on or extension such as [Tampermonkey](https://www.tampermonkey.net/), [Violentmonkey](https://violentmonkey.github.io/), or [Greasemonkey](https://addons.mozilla.org/en-GB/firefox/addon/greasemonkey/) installed in your browser. More information can be found [here](https://stackapps.com/tags/script/info), [here](https://openuserjs.org/about/Userscript-Beginners-HOWTO), or [here](https://userscripts-mirror.org/about/installing.html).
 
-## Import YandexMusic releases into MusicBrainz
+## Import YandexMusic album into MusicBrainz
+![yandexbrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandexbrainz.png)
 
-One-click importing of releases from music.yandex.ru into MusicBrainz
+![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20album.jpg)
 
-[![Source](https://github.com/jerone/UserScripts/blob/master/_resources/Source-button.png)](https://github.com/murdos/musicbrainz-userscripts/blob/master/bandcamp_importer.user.js)
-[![Install](https://raw.github.com/jerone/UserScripts/master/_resources/Install-button.png)](https://raw.github.com/murdos/musicbrainz-userscripts/master/bandcamp_importer.user.js)
+One-click importing of album from music.yandex.ru into MusicBrainz
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://raw.github.com)
