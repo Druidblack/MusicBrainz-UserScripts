@@ -55,3 +55,11 @@ One-click importing of album from Jellyfin into MusicBrainz
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/jellyfin_import_album.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/jellyfin_import_album.user.js)
+
+
+## MusicBrainz Join Phrase Filler for Album and Tracklist 
+
+A script that fills in the Join phrase fields if there are several authors of an album or track. The script automatically places commas or &, depending on the situation (the number of performers).
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/join_phrase.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/join_phrase.js)
