@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MusicBrainz: Import and Search from Yandex Music
 // @description Для страниц альбомов – импорт релиза в MusicBrainz и поиск; для страниц исполнителей – поиска исполнителя на MusicBrainz.
-// @version     2025.01.00.2
+// @version     2025.01.00.3
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -122,7 +122,7 @@
     add_field("country", country);
     add_field("status", "official");
     add_field("type", type);
-    add_field("edit_note", "Imported from: " + document.location.href + " using script from https://github.com/Druidblack/MusicBrainz-UserScripts");
+    add_field("edit_note", "Imported from: " + document.location.href + " using script https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album.user.js");
     add_field("urls.0.link_type", "980");  // При необходимости, замените на нужное значение
     add_field("urls.0.url", document.location.href);
 
