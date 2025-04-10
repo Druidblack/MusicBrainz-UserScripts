@@ -35,7 +35,7 @@
   })();
 
   // --- Глобальные переменные ---
-  var apiKey = "ea5497543aa047c798117642bc4161ce";
+  var apiKey = "ea5497543aa047c798117642bc4161";
   var serverAddress = "192.168.1.161:8096";
   var albumArtists = [];  // Массив исполнителей релиза
   var currentDetailsId = "";
@@ -92,7 +92,7 @@
       add_field("urls.0.link_type", "980");
       add_field("urls.0.url", albumLink);
     }
-    add_field("edit_note", "Imported from: " + document.location.href + " using Emby script");
+    add_field("edit_note", "Imported from using Jellyfin script https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/jellyfin_import_album.user.js");
   }
 
   // --- Извлечение данных о треках ---
