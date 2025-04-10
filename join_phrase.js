@@ -7,6 +7,8 @@
 // @match        https://musicbrainz.org/*
 // @icon         https://musicbrainz.org/favicon.ico
 // @grant        none
+// @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/join_phrase.js
+// @updateURL   https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/join_phrase.js
 // ==/UserScript==
 
 (function() {
