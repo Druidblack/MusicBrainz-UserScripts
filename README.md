@@ -49,3 +49,7 @@ Also, in a program (for example, Tampermonkey), you need to disable the BlackChe
 
 ![blackcheck](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/blackcheck.jpg)
 
+One-click importing of album from Jellyfin into MusicBrainz
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/jellyfin_import_album.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/jellyfin_import_album.user.js)
