@@ -47,6 +47,8 @@ Also, in a program (for example, Tampermonkey), you need to disable the BlackChe
 
 **If the script buttons do not appear, you need to reload the page.**
 
+P.S. If you use the plugin to map your music to [apple music](https://repo.xkrivo.net/jellyfin/manifest.json), the script can send the mapped link as the source.
+
 ![blackcheck](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/blackcheck.jpg)
 
 One-click importing of album from Jellyfin into MusicBrainz
