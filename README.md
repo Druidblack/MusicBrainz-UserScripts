@@ -39,11 +39,13 @@ change the port to your own.
 In addition to importing data and searching for an album, the script can extract the maximum acceptable quality cover that is stored in jellyfin. (For example, to upload it later as an album cover on the website musicbrainz.org)
 In order for this button to work correctly, you need to specify the application address and API key in the variables.
 
-var apiKey = "ea5497543aa047c798117642bc4161ce"
+**var apiKey = "ea5497543aa047c798117642bc4161ce"**
 
-var serverAddress = "192.168.1.161:8096"
+**var serverAddress = "192.168.1.161:8096"**
 
 Also, in a program (for example, Tampermonkey), you need to disable the BlackCheck, since the script works with a local address.
+
+**If the script buttons do not appear, you need to reload the page.**
 
 ![blackcheck](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/blackcheck.jpg)
 
