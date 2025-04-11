@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MusicBrainz Join Phrase Filler for Album and Tracklist 
 // @namespace    https://github.com/Druidblack/MusicBrainz-UserScripts
-// @version      2025.0.13
+// @version      2025.0.14
 // @author       Druidblack
 // @description  Automatically fills in the join-phrase fields for performing credits on the Album and Tracklist tabs.
 // @match        *://*.musicbrainz.org/*
