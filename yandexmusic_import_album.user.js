@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MusicBrainz: Import and Search from Yandex Music
 // @description Для страниц альбомов и книг – импорт релиза в MusicBrainz и поиск; для страниц исполнителей – поиска исполнителя на MusicBrainz.
-// @version     2025.01.00.4
+// @version     2025.01.00.5
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -37,8 +37,7 @@
     var url = document.location.href;
     if (/\/album\//.test(url)) {
       extractYandexAlbum();
-    }
-    else if (/\/artist\//.test(url)) {
+    } else if (/\/artist\//.test(url)) {
       extractYandexArtist();
     }
   }
@@ -169,8 +168,15 @@
     }
     add_field("country", country);
     add_field("status", "official");
-    add_field("type", type);
-    add_field("edit_note", "Imported from: " + document.location.href + " using script from https://github.com/Druidblack/MusicBrainz-UserScripts");
+    // Если режим аудио, оставляем type="Other", а затем добавляем еще одно поле с type="Audiobook" и language "rus"
+    if (type === "Other") {
+      add_field("type", "Other");
+      add_field("type", "Audiobook");
+      add_field("language", "rus");
+    } else {
+      add_field("type", type);
+    }
+    add_field("edit_note", "Imported from: " + document.location.href + " using script from https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album.user.js");
     add_field("urls.0.link_type", "980");  // При необходимости, замените на нужное значение
 
     // Перед отправкой ссылки удаляем ?activeTab=about и ?activeTab=track-list, если они есть
