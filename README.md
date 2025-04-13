@@ -58,7 +58,7 @@ One-click importing of album from Jellyfin into MusicBrainz
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/jellyfin_import_album.user.js)
 
 
-## MusicBrainz Join Phrase Filler for Album and Tracklist 
+## MusicBrainz Join Phrase Filler for Album and Tracklist  (This script is no longer needed for my scripts for jellyfin and Yandex Music to work).
 
 ![Phrase](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Join%20Phrase.jpg)
 
