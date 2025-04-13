@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name        Jellyfin MusicBrainz Import
 // @description Importing a release from the Jellyfin web interface to MusicBrainz. Buttons are added for importing, searching, and retrieving an image.
-// @version     2025.02.00.01
-// @author      Druidblack
+// @version     2025.02.00.03
+// @author      YDruidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
 // @include     http://*:8096/web/*
@@ -35,9 +35,9 @@
   })();
 
   // --- Глобальные переменные ---
-  var apiKey = "ea5497543aa047c798117642bc4161";
+  var apiKey = "ea5497543aa047c798117642bc4161ce";
   var serverAddress = "192.168.1.161:8096";
-  var albumArtists = [];  // Массив исполнителей релиза
+  var albumArtists = [];  // Массив исполнителей альбома
   var currentDetailsId = "";
 
   // --- Перехват навигационных событий для SPA ---
@@ -72,7 +72,7 @@
     waitForKeyElements("div.childrenItemsContainer.itemsContainer.padded-right.vertical-list", extractTracks);
   }
 
-  // --- Извлечение общих данных релиза ---
+  // --- Извлечение общих данных релиза (для альбома) ---
   function extractCommonData() {
     album = myJQ("h1.itemName.infoText.parentNameLast bdi").first().text().trim();
 
@@ -85,14 +85,19 @@
     add_field("name", album);
     for (var i = 0; i < albumArtists.length; i++) {
       add_field("artist_credit.names." + i + ".artist.name", albumArtists[i]);
+      // Логика join_phrase для авторов альбома (если их больше одного)
+      if (albumArtists.length > 1 && i !== albumArtists.length - 1) {
+        var join_phrase = (i === albumArtists.length - 2) ? " & " : ", ";
+        add_field("artist_credit.names." + i + ".join_phrase", join_phrase);
+      }
     }
     add_field("date.year", releaseYear);
-    add_field("mediums.0.format", 'Digital Media');
+    add_field("mediums.0.format", "Digital Media");
     if (albumLink) {
       add_field("urls.0.link_type", "980");
       add_field("urls.0.url", albumLink);
     }
-    add_field("edit_note", "Imported from using Jellyfin script https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/jellyfin_import_album.user.js");
+    add_field("edit_note", "Imported from: " + document.location.href + " using Emby script");
   }
 
   // --- Извлечение данных о треках ---
@@ -111,7 +116,30 @@
       add_field("mediums.0.track." + i + ".length", parseDuration(dur));
 
       if (trackArtistText) {
-        if (trackArtistText.indexOf(",") === -1) {
+        // Если в строке присутствует запятая – разбиваем по запятой
+        if (trackArtistText.indexOf(",") !== -1) {
+          var trackArtists = trackArtistText.split(",");
+          // Если два и более исполнителя, для каждого, кроме последнего, добавляем join_phrase
+          if (trackArtists.length >= 2) {
+            for (var j = 0; j < trackArtists.length; j++) {
+              var individualArtist = trackArtists[j].trim();
+              if (individualArtist) {
+                add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".artist.name", individualArtist);
+                if (j !== trackArtists.length - 1) {
+                  var join_phrase = (j === trackArtists.length - 2) ? " & " : ", ";
+                  add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".join_phrase", join_phrase);
+                }
+              }
+            }
+          } else {
+            // Если только один исполнитель после разделения
+            var individualArtist = trackArtists[0].trim();
+            if (individualArtist) {
+              add_field("mediums.0.track." + i + ".artist_credit.names.0.artist.name", individualArtist);
+            }
+          }
+        } else {
+          // Если запятых нет, пытаемся сопоставить с исполнителями альбома
           var matchedArtists = [];
           var remaining = trackArtistText;
           for (var j = 0; j < albumArtists.length; j++) {
@@ -122,18 +150,29 @@
             }
           }
           remaining = remaining.trim();
-          for (var j = 0; j < matchedArtists.length; j++) {
-            add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".artist.name", matchedArtists[j]);
-          }
-          if (remaining.length > 0) {
-            add_field("mediums.0.track." + i + ".artist_credit.names." + matchedArtists.length + ".artist.name", remaining);
-          }
-        } else {
-          var trackArtists = trackArtistText.split(",");
-          for (var j = 0; j < trackArtists.length; j++) {
-            var individualArtist = trackArtists[j].trim();
-            if (individualArtist) {
-              add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".artist.name", individualArtist);
+          if (matchedArtists.length >= 2) {
+            for (var j = 0; j < matchedArtists.length; j++) {
+              add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".artist.name", matchedArtists[j]);
+              if (j !== matchedArtists.length - 1) {
+                var join_phrase = (j === matchedArtists.length - 2) ? " & " : ", ";
+                add_field("mediums.0.track." + i + ".artist_credit.names." + j + ".join_phrase", join_phrase);
+              }
+            }
+            if (remaining.length > 0) {
+              add_field("mediums.0.track." + i + ".artist_credit.names." + matchedArtists.length + ".artist.name", remaining);
+            }
+          } else {
+            // Если только один матч или ничего не найдено – добавляем найденное (или оставшееся) как единственного исполнителя
+            if (matchedArtists.length === 1) {
+              add_field("mediums.0.track." + i + ".artist_credit.names.0.artist.name", matchedArtists[0]);
+              if (remaining.length > 0) {
+                add_field("mediums.0.track." + i + ".artist_credit.names.1.artist.name", remaining);
+                if (2 > 1) { // для двух исполнителей – задаем join_phrase для первого
+                  add_field("mediums.0.track." + i + ".artist_credit.names.0.join_phrase", " & ");
+                }
+              }
+            } else if (remaining.length > 0) {
+              add_field("mediums.0.track." + i + ".artist_credit.names.0.artist.name", remaining);
             }
           }
         }
@@ -168,7 +207,7 @@
     myform.appendChild(field);
   }
 
-  // --- Кнопка импорта (Add to MusicBrainz) с иконкой и плавным переключением ---
+  // --- Кнопка импорта (Add to MusicBrainz) ---
   function addImportButton(parentEl) {
     if (parentEl.querySelector(".emby-mb-import-button")) return;
     myform.method = "post";
@@ -208,7 +247,7 @@
     parentEl.appendChild(formContainer);
   }
 
-  // --- Кнопка поиска (Search on MusicBrainz) с иконкой и плавным переключением ---
+  // --- Кнопка поиска (Search on MusicBrainz) ---
   function addSearchButton(parentEl) {
     if (parentEl.querySelector(".emby-mb-search-button")) return;
 
@@ -244,7 +283,7 @@
     parentEl.appendChild(searchLinkContainer);
   }
 
-  // --- Кнопка получения ссылки на изображение (Get Image URL) с иконкой и плавным переключением ---
+  // --- Кнопка получения ссылки на изображение (Get Image URL) ---
   function addImageLinkButton(parentEl) {
     if (parentEl.querySelector(".emby-mb-image-button")) return;
     var imageLinkContainer = document.createElement("div");
@@ -346,5 +385,4 @@
       run();
     }
   }, 1000);
-
 })();
