@@ -2,7 +2,7 @@
 // @name        Jellyfin MusicBrainz Import
 // @description Importing a release from the Jellyfin web interface to MusicBrainz. Buttons are added for importing, searching, and retrieving an image.
 // @version     2025.02.00.03
-// @author      YDruidblack
+// @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
 // @include     http://*:8096/web/*
