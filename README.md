@@ -14,6 +14,19 @@ To use these userscripts, you need a userscript add-on or extension such as [Tam
 ## Import YandexMusic album into MusicBrainz
 ![yandexbrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandexbrainz.png)
 
+## Import YandexMusic album into MusicBrainz (new design)
+
+![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20album%20new%20design.jpg)
+![yandexbrainz artist](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20artist%20new%20design.jpg)
+![yandexbrainz book](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20book%20new%20design.jpg)
+
+One-click importing of album from music.yandex.ru into MusicBrainz
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
+
+## Import YandexMusic album into MusicBrainz (old design)
+
 ![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20_album.jpg)
 ![yandexbrainz artist](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20artist.jpg)
 ![yandexbrainz book](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/book.jpg)
