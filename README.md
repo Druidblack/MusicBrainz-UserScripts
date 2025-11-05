@@ -28,6 +28,10 @@ One-click importing of album from music.yandex.ru into MusicBrainz
 ## Album search button on the website [musicbrainz.org](https://musicbrainz.org)
 It only works together with [One-click importing of album from music.yandex.ru into MusicBrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
 
+Adds an album search button on the website musicbrainz.org with information output without going from the yandexmusic website
+
+Добавлена кнопка поиска альбома на веб-сайте musicbrainz.org с возможностью вывода информации без перехода с веб-сайта яндексмузыки
+
 ![yandexbrainz cheсk](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/chekmb.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_add_check_on_musicbrainz.user.js)
@@ -35,12 +39,20 @@ It only works together with [One-click importing of album from music.yandex.ru i
 
 ## YandexMusic Album search button on the website [musicbrainz.org](https://musicbrainz.org)
 
+We check the availability of albums on the website musicbrainz.org and marks it on the album cover.
+
+Мы проверяем наличие альбомов на сайте musicbrainz.org и отмечаем это на обложке альбома.
+
 ![yandexbrainz highlight](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/highlight.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_highlight_artist_albums.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_highlight_artist_albums.user.js)
 
 ## Checking music artists (YandexMusic) on the website [theaudiodb.com](https://www.theaudiodb.com)
+
+We check the availability of performers on the site theaudiodb.com . If there is a performer, then the color is green and there will be a button next to the name to go to the site. theaudiodb.com (to the performer). If there is no performer, then the color is red. The cache can be reset in the menu (reset works automatically for 7 days for those found and 1 hour for those missing).
+
+Проверяем наличие исполнителей на сайте theaudiodb.com. Если исполнитель есть, то цвет зеленый и возле имени будет кнопка перехода на сайт theaudiodb.com (к исполнителю). Если исполнителя нет, то цвет красный. В меню можно сбрасывать кеш (сброс работает автоматически 7 дней для для найденных и 1 час для отсутствующих).
 
 ![theaudiodb1](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/1.jpg)
 ![theaudiodb2](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/2.jpg)
