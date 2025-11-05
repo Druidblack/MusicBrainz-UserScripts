@@ -61,6 +61,16 @@ We check the availability of performers on the site theaudiodb.com . If there is
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_audiodb_check.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_audiodb_check.user.js)
 
+## Yandex Music Artist Collector Pro
+
+We collect links to all the performers that can be obtained from the page. It can be used on the favorites page.
+
+Собираем ссылки на исполнителей всех которые можно получить со страницы. Можно использовать на странице избранного.
+
+![ymacp3](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/5555.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/ymacp.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/ymacp.user.js)
 
 ## Import YandexMusic album into MusicBrainz (old design)
 
