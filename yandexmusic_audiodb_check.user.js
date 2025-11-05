@@ -13,8 +13,8 @@
 // @connect      www.theaudiodb.com
 // @icon        https://theaudiodb.com/favicon.ico
 //
-// @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_audiodb_cheker.user.js
-// @updateURL    https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_audiodb_cheker.user.js
+// @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_audiodb_check.user.js
+// @updateURL    https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_audiodb_check.user.js
 // ==/UserScript==
 
 (function () {
@@ -311,3 +311,4 @@
   });
 
 })();
+
