@@ -1,7 +1,7 @@
-# MusicBrainz and AudioDB - UserScripts
+# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru) - UserScripts
 Collection of my MusicBrainz and AudioDB Userscripts
 
-# Collection of userscripts for MusicBrainz and AudioDB.
+# Collection of userscripts for MusicBrainz, AudioDB and YandexMusic.
 
 [community.metabrainz.org](https://community.metabrainz.org/t/a-new-musicbrainz-user-script-was-released/77897)
 
@@ -25,20 +25,22 @@ One-click importing of album from music.yandex.ru into MusicBrainz
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
 
-## Album search button on the website musicbrainz.org
+## Album search button on the website [musicbrainz.org](https://musicbrainz.org)
 It only works together with [One-click importing of album from music.yandex.ru into MusicBrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
 
-![yandexbrainz chek](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/chekmb.jpg)
+![yandexbrainz cheсk](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/chekmb.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_add_check_on_musicbrainz.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_add_check_on_musicbrainz.user.js)
 
-## Album search button on the website musicbrainz.org
+## YandexMusic Album search button on the website [musicbrainz.org](https://musicbrainz.org)
 
 ![yandexbrainz highlight](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/highlight.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_highlight_artist_albums.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_highlight_artist_albums.user.js)
+
+## Checking music artists (YandexMusic) on the website [theaudiodb.com](https://www.theaudiodb.com)
 
 
 ## Import YandexMusic album into MusicBrainz (old design)
