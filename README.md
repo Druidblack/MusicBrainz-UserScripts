@@ -25,7 +25,7 @@ One-click importing of album from music.yandex.ru into MusicBrainz
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
 
-## Album search button on the website musicbrainz.com
+## Album search button on the website musicbrainz.org
 It only works together with [One-click importing of album from music.yandex.ru into MusicBrainz](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/new_yandexmusic_import_album.user.js)
 
 ![yandexbrainz chek](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/chekmb.jpg)
@@ -33,9 +33,12 @@ It only works together with [One-click importing of album from music.yandex.ru i
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_add_check_on_musicbrainz.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_add_check_on_musicbrainz.user.js)
 
+## Album search button on the website musicbrainz.org
 
+![yandexbrainz highlight](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/highlight.jpg)
 
-
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_highlight_artist_albums.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_highlight_artist_albums.user.js)
 
 
 ## Import YandexMusic album into MusicBrainz (old design)
