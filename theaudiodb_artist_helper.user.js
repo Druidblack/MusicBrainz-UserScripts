@@ -17,6 +17,7 @@
 // @connect      ws.audioscrobbler.com
 // @connect      www.last.fm
 // @inject-into  page
+// @icon        https://www.theaudiodb.com/favicon.ico
 //
 // @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_artist_helper.user.js
 // @updateURL    https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_artist_helper.user.js
@@ -590,3 +591,4 @@ if (bioRow) {
     main();
   }
 })();
+
