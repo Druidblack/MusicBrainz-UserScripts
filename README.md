@@ -114,6 +114,21 @@ To work, you need an API KEY for last.fm and fanart.tv
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_artist_helper.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_artist_helper.user.js)
 
+## TheAudioDB → Fanart.tv
+
+Checks on the website fanart.tv availability of images for the artist
+
+To work, you need an API KEY for fanart.tv
+
+Проверяет на сайте fanart.tv наличие изображений для артиста
+
+Для работы нужен API KEY для fanart.tv
+
+![fanart](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/fanart.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_fanarttv.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_fanarttv.user.js)
+
 ## Import YandexMusic album into MusicBrainz (old design)
 
 ![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20_album.jpg)
