@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.4
+// @version     2025.01.00.32.5
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -181,7 +181,7 @@
 
     addField('labels.0.name', label);
     addField('packaging','None');
-    if (year) addField('date.year', year);
+    if (year) addField('date.year', year); // будет перезаписано, если API вернёт точную дату
     addField('country','XW');
     addField('status','official');
     addField('type', relPrimary);
@@ -245,7 +245,6 @@
       let dynAlbumList = updatedMetaArtists;
       if (relSecondary) dynAlbumList = audioAuthors.concat(updatedMetaArtists);
 
-
       // очистить старые artist_credit
       Array.from(form.querySelectorAll('input[name^="artist_credit.names"]'))
         .forEach(i=>i.remove());
@@ -280,11 +279,53 @@
         });
       }
 
+      // --- NEW: releaseDate from Yandex API ---
+      try {
+        const m = location.pathname.match(/\/album\/(\d+)/);
+        const albumId = m ? m[1] : null;
+        if (albumId) {
+          const r = await fetch(`https://api.music.yandex.net/albums/${albumId}`);
+          const j = await r.json();
+
+          // Пытаемся найти releaseDate в разных формах ответа
+          let rd = null;
+          if (j && j.result) {
+            if (Array.isArray(j.result.albums) && j.result.albums[0]?.releaseDate) {
+              rd = j.result.albums[0].releaseDate;
+            } else if (j.result.releaseDate) {
+              rd = j.result.releaseDate;
+            } else if (j.result.album?.releaseDate) {
+              rd = j.result.album.releaseDate;
+            }
+          } else if (j && j.releaseDate) {
+            rd = j.releaseDate;
+          }
+
+          if (rd) {
+            const mdt = String(rd).match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (mdt) {
+              const yy = mdt[1];
+              const mm = String(parseInt(mdt[2], 10)); // без ведущих нулей
+              const dd = String(parseInt(mdt[3], 10)); // без ведущих нулей
+              // Удаляем старые поля даты (включая год со страницы), ставим точную дату из API
+              Array.from(form.querySelectorAll('input[name^="date."]')).forEach(i=>i.remove());
+              addField('date.year',  yy);
+              addField('date.month', mm);
+              addField('date.day',   dd);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch releaseDate from Yandex API', err);
+        // Fallback: останется ранее добавленный date.year (если был найден на странице)
+      }
+      // --- /NEW ---
+
       // получить треки
-      const m = location.pathname.match(/\/album\/(\d+)/);
-      if (m) {
+      const m2 = location.pathname.match(/\/album\/(\d+)/);
+      if (m2) {
         try {
-          const res  = await fetch(`/handlers/album.jsx?album=${m[1]}&external-domain=music.yandex.ru`);
+          const res  = await fetch(`/handlers/album.jsx?album=${m2[1]}&external-domain=music.yandex.ru`);
           const data = await res.json();
           let tracks = [];
           if (Array.isArray(data.volumes)) data.volumes.forEach(v=>v.forEach(t=>tracks.push(t)));
