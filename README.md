@@ -1,7 +1,7 @@
-# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru) - UserScripts
-Collection of my MusicBrainz, AudioDB and YandexMusic Userscripts
+# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru) [Harmony](https://harmony.pulsewidth.org.uk) - UserScripts
+Collection of my MusicBrainz, AudioDB, YandexMusic and Harmony Userscripts
 
-# Collection of userscripts for MusicBrainz, AudioDB and YandexMusic.
+# Collection of userscripts for MusicBrainz, AudioDB, YandexMusic and  Harmony.
 
 [community.metabrainz.org](https://community.metabrainz.org/t/a-new-musicbrainz-user-script-was-released/77897)
 
@@ -128,6 +128,17 @@ To work, you need an API KEY for fanart.tv
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_fanarttv.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_fanarttv.user.js)
+
+## Yandex Music → Deezer → Harmony (Album Finder)
+
+On the album page, Yandex Music searches for a release in Deezer and opens Harmony. If the button is green, then the album was found successfully. If the blue album is not found.
+
+На странице альбома Яндекс Музыки ищет релиз в Deezer и открывает Harmony. Если кнопка зеленая, то альбом найден удачно. Если голубая альбом не найден.
+
+![harmony](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/harmony.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album_harmony.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album_harmony.user.js)
 
 ## Import YandexMusic album into MusicBrainz (old design)
 
