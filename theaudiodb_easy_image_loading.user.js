@@ -12,7 +12,6 @@
 // @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_easy_image_loading.user.js
 // @updateURL    https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/TheAudioDB_Easy_image_loading.user.js
 // ==/UserScript==
-// ==/UserScript==
 
 (function () {
   'use strict';
@@ -408,3 +407,4 @@
     }
   }, true);
 })();
+
