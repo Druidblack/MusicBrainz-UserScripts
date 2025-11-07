@@ -7,7 +7,7 @@
 // @match        https://www.theaudiodb.com/artist/*
 // @grant        GM_xmlhttpRequest
 // @connect      webservice.fanart.tv
-// @icon        https://musicbrainz.org/favicon.ico
+// @icon        https://fanart.tv/favicon.ico
 //
 // @downloadURL  https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_fanarttv.user.js
 // @updateURL    https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_fanarttv.user.js
@@ -139,3 +139,4 @@
     main();
   }
 })();
+
