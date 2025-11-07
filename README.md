@@ -99,6 +99,17 @@ For example. The image is 1920 x 1080 and png. If you download it for fanart, th
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_easy_image_loading.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_easy_image_loading.user.js)
 
+## TheAudioDB Artist Helper
+
+MusicBrainz data Panel/Wikipedia + Last.fm (tags/stat/years/founded/birth/biography) and an extended summary fanart.tv
+
+Панель с данными MusicBrainz/Wikipedia + Last.fm (теги/стат/годы/основан/рождение/биография) и расширенной сводкой fanart.tv.
+
+![ADB](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/ADB.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_artist_helper.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/theaudiodb_artist_helper.user.js)
+
 ## Import YandexMusic album into MusicBrainz (old design)
 
 ![yandexbrainz album](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/yandex%20_album.jpg)
