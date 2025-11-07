@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Yandex Music → Deezer → Harmony (Album Finder)
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
-// @version      1.3.0
+// @version      1.4.0
 // @description  On the album page, Yandex Music searches for a release in Deezer and opens Harmony;
 // @author       Druidblack
 // @match        https://music.yandex.ru/album/*
@@ -96,6 +96,9 @@
     .ym2deezer--found:hover     { background-color: #55d88a; }
     .ym2deezer--fallback:hover  { background-color: #4aa6e1; }
     .ym2deezer--error:hover     { background-color: #ef6b60; }
+
+    /* скрыть кнопку на не-альбомных страницах */
+    .ym2deezer--hidden { display: none !important; }
   `);
 
   // ---------- UI ----------
@@ -131,6 +134,22 @@
     if (badge) badge.textContent = text || '';
 
     if (href) btn.href = href;
+  }
+
+  // показать/скрыть на не-альбомных страницах
+  const isAlbumPage = () => /^\/album\/\d+/.test(location.pathname);
+
+  function hideButton() {
+    if (!btn) return;
+    btn.classList.add('ym2deezer--hidden');
+    btn.href = '#';
+    const badge = btn.querySelector('.ym2deezer-badge');
+    if (badge) badge.textContent = '';
+  }
+
+  function showButton() {
+    if (!btn) return;
+    btn.classList.remove('ym2deezer--hidden');
   }
 
   // ---------- Placement ----------
@@ -282,7 +301,7 @@
       imgEl.src = url3;
       return;
     } catch (_) {}
-    // 4) Фолбэк: рисуем inline SVG с буквой H, чтобы не было "битого" файла
+    // 4) Фолбэк: inline SVG, чтобы не было "битого" файла
     imgEl.outerHTML = `
       <svg class="ym2deezer-icon" viewBox="0 0 24 24" aria-hidden="true">
         <rect x="0" y="0" width="24" height="24" rx="4" fill="white"></rect>
@@ -307,7 +326,7 @@
     }
 
     const title = res?.title || '';
-    const year  = res?.year || '';
+       const year  = res?.year || '';
     const artistName = Array.isArray(res?.artists) && res.artists.length
       ? res.artists.map(a => a.name).join(', ')
       : '';
@@ -383,9 +402,11 @@
       const href = location.href;
       if (href !== lastProcessedHref) {
         lastProcessedHref = href;
+
         const id = getAlbumIdFromUrl(href);
         if (id) {
           ensureButton();
+          showButton();
           // Подождём рендер и вставим между «Слушать» и «Трейлер»
           for (let i = 0; i < 20; i++) {
             const placed = placeButtonInline();
@@ -394,11 +415,18 @@
           }
           syncShapeWithPlay();
           processAlbum(id);
+        } else {
+          // Не страница альбома — прячем кнопку
+          hideButton();
         }
       } else {
-        // SPA может перерисовывать хедер — поддерживаем позицию и форму, но без дёргания
-        placeButtonInline();
-        syncShapeWithPlay();
+        // Поддерживаем позицию и форму только на страницах альбома
+        if (isAlbumPage()) {
+          placeButtonInline();
+          syncShapeWithPlay();
+        } else {
+          hideButton();
+        }
       }
       await sleep(300);
     }
@@ -406,11 +434,13 @@
 
   window.addEventListener('resize', () => {
     // при изменении размеров подровняем форму под «Слушать»
-    syncShapeWithPlay();
+    if (isAlbumPage()) syncShapeWithPlay();
   });
 
-  // Start
+  // ---------- Start ----------
   ensureButton();
+  // моментальная реакция при первой загрузке
+  if (!isAlbumPage()) hideButton();
   routerLoop();
 
 })();
