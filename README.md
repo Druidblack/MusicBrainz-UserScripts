@@ -77,15 +77,21 @@ We collect links to all the performers that can be obtained from the page. It ca
 We upload images by dragging on the icon, converting the uploaded image according to the necessary requirements (we check the aspect ratio and convert it to jpg with high resolution) and checking the uploaded images.
 
 1. Check the uploaded image for the required requirements.
+   
 1.1. For png images, we check the format and resolution. If it doesn't match, the script won't let you download it.
+
 1.2. For jpg images.  We check the correctness of the aspect ratio and the minimum resolution of the image. If the image corresponds to the aspect ratio but is higher than the required resolution or in a different format, then we will convert the image to the required requirements before uploading the script.
+
 For example. The image is 1920 x 1080 and png. If you download it for fanart, the script will check the aspect ratio and reduce it to 1280x720 and convert it to jpg and then upload it to the site.
 
 Загружаем изображения перетаскиванием на иконку, конвертирование загружаемого изображения по необходимым требованиям (проверяем соотношение сторон и конвертируем в jpg с ружным разрешением) и проверка загружаемых изображений.
 
 1. Проверяем загружаемое изображение на необходимые требования.
+   
 1.1. Для изображений png проверяем формат и разрешение. Если оно не соответствует то скрипт не даст его загрузить.
+
 1.2. Для изображений jpg.  Проверяем правильность соотношения сторон и минимальное разрешение изображения. Если изображение соответствует соотношению сторон но больше необходимого разрешения или в другом формате, то скрипт перед загрузкой сконвертируем изображение под необходимые требования.
+
 Например. Изображение 1920х1080 и png. Если загрузить его для fanart, то скрипт првоерит соотношение сторон и уменьшит его до 1280x720 и сконвертирует его в jpg и потом загрузит его на сайт.
 
 ![easy](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/easy.jpg)
