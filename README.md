@@ -103,7 +103,11 @@ For example. The image is 1920 x 1080 and png. If you download it for fanart, th
 
 MusicBrainz data Panel/Wikipedia + Last.fm (tags/stat/years/founded/birth/biography) and an extended summary fanart.tv
 
-Панель с данными MusicBrainz/Wikipedia + Last.fm (теги/стат/годы/основан/рождение/биография) и расширенной сводкой fanart.tv.
+To work, you need an API KEY for last.fm and fanart.tv
+
+Панель с данными MusicBrainz/Wikipedia + Last.fm (теги/стат/годы/основан/рождение/биография) и расширенной сводкой fanart.tv
+
+Для работы нужны API KEY для last.fm и fanart.tv
 
 ![ADB](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/ADB.jpg)
 
