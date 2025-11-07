@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.5
+// @version     2025.01.00.32.6
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -52,13 +52,18 @@
   function injectButtons() {
     // Альбом
     if (/\/album\//.test(location.pathname)) {
-      const container = document.querySelector(
-        'div.PageHeaderBase_controls__HzGgE > ' +
-        '.CommonPageHeader_controlsContainer__4_h22 > ' +
-        '.CommonPageHeader_controls__c27E_'
-      );
-      if (!container || container.querySelector('.mb-buttons')) return;
-      injectAlbumButtons(container);
+        const container =
+              document.querySelector(
+                  'div.PageHeaderBase_controls__HzGgE ' +
+                  '[class^="CommonPageHeader_controlsContainer__"] ' +
+                  '[class^="CommonPageHeader_controls__"]'
+              )
+        || document.querySelector(
+            'div.PageHeaderBase_controls__HzGgE [class^="CommonPageHeader_controls__"]'
+        );
+
+        if (!container || container.querySelector('.mb-buttons')) return;
+        injectAlbumButtons(container);
     }
     // Артист (новый UI / старый UI)
     else if (/\/artist\//.test(location.pathname)) {
