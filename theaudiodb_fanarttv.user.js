@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TheAudioDB → Fanart.tv
-// @version      1.0
+// @version      1.1
 // @description  Checks on the website fanart.tv availability of images for the artist
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
@@ -16,8 +16,7 @@
 (function () {
   'use strict';
 
-  // <<< SET YOUR Fanart.tv API KEY HERE >>>
-  const FANART_API_KEY = 'API_KEY';
+  const FANART_API_KEY = 'api_key';
 
   if (!/\/artist\/\d+/.test(location.pathname)) return;
 
@@ -54,6 +53,15 @@
     line.style.margin = '6px 0 10px';
     line.style.fontSize = '14px';
     line.style.lineHeight = '1.35';
+
+    // Центрирование и аккуратные переносы
+    line.style.display = 'block';
+    line.style.width = '100%';
+    line.style.textAlign = 'center';
+    line.style.whiteSpace = 'normal';
+    line.style.wordBreak = 'break-word';
+    line.style.hyphens = 'auto';
+
     line.textContent =
       `Background=${counts.background}, ` +
       `Thumb=${counts.thumb}, ` +
@@ -111,28 +119,17 @@
 
   function main() {
     const heading = findExternalLinksHeading();
-    if (!heading) return; // нет точки вставки — тихо выходим
+    if (!heading) return;
 
     const mbid = findFanartMbidFromLink();
-    if (!mbid) {
-      // Fanart-ссылки нет — выводить нечего
-      return;
-    }
+    if (!mbid) return;
 
-    if (!FANART_API_KEY || /YOUR_FANART_API_KEY/.test(FANART_API_KEY)) {
-      // Ключ не задан — не вставляем ничего, чтобы не засорять интерфейс
-      return;
-    }
+    if (!FANART_API_KEY || /YOUR_FANART_API_KEY/.test(FANART_API_KEY)) return;
 
     requestFanart(
       mbid,
-      (json) => {
-        const counts = computeCounts(json || {});
-        renderLine(heading, counts);
-      },
-      () => {
-        // В случае ошибки тоже ничего не вставляем (по ТЗ нужна только итоговая строка).
-      }
+      (json) => renderLine(heading, computeCounts(json || {})),
+      () => {}
     );
   }
 
