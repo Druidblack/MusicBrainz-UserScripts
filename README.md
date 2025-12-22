@@ -78,7 +78,7 @@ We upload images by dragging on the icon, converting the uploaded image accordin
 
 1. Check the uploaded image for the required requirements.
    
-1.1. For png images, we check the format and resolution. If it doesn't match, the script won't let you download it.
+1.1. For png images, we check the format and resolution. If it doesn't match, then the script won't load it for Cutout and Clearart. For the logo, check the transparency and convert it to Png and if the size exceeds the required one, it will allow it to be cropped and reduced to the required size.For Wide Thumb, Fanart and Banner, you can also crop the image and reduce it to the required size and convert it.
 
 1.2. For jpg images.  We check the correctness of the aspect ratio and the minimum resolution of the image. If the image corresponds to the aspect ratio but is higher than the required resolution or in a different format, then we will convert the image to the required requirements before uploading the script.
 
@@ -88,7 +88,7 @@ For example. The image is 1920 x 1080 and png. If you download it for fanart, th
 
 1. Проверяем загружаемое изображение на необходимые требования.
    
-1.1. Для изображений png проверяем формат и разрешение. Если оно не соответствует то скрипт не даст его загрузить.
+1.1. Для изображений png проверяем формат и разрешение. Если оно не соответствует то для Cutout и Clearart скрипт не даст его загрузить. Для logo проверить прозрачность и конвертирует его в Png и если размер превышает требуемый позволит его обрезать и уменьшить до требуемого размера.Для Wide Thumb, Fanart и Banner так же можно обрезать изображение и уменьшить его до требуемого размера и сконвертировать его.
 
 1.2. Для изображений jpg.  Проверяем правильность соотношения сторон и минимальное разрешение изображения. Если изображение соответствует соотношению сторон но больше необходимого разрешения или в другом формате, то скрипт перед загрузкой сконвертируем изображение под необходимые требования.
 
