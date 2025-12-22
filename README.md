@@ -1,4 +1,4 @@
-# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru) [Harmony](https://harmony.pulsewidth.org.uk) - UserScripts
+# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru), [Harmony](https://harmony.pulsewidth.org.uk), [TheMovieDB](https://www.themoviedb.org/) - UserScripts
 Collection of my MusicBrainz, AudioDB, YandexMusic and Harmony Userscripts
 
 # Collection of userscripts for MusicBrainz, AudioDB, YandexMusic and  Harmony.
@@ -139,6 +139,28 @@ On the album page, Yandex Music searches for a release in Deezer and opens Harmo
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_import_album_harmony.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_import_album_harmony.user.js)
+
+## TMDB Upload Helper
+
+TMDB upload windows: Logo => non-PNG to PNG. Backdrop/Poster => JPEG and downscale; if aspect mismatch show interactive crop UI (correct aspect) then upload. Multi-file DnD: crop sequentially per file, then upload all at once. Added "Skip this file" button.
+
+Окна загрузки с помощью TMDB: Логотип => не из PNG в PNG. Фон/ плакат => в формате JPEG и в уменьшенном масштабе; если формат не соответствует, покажите интерактивный интерфейс обрезки (правильный формат), затем загрузите. Многофайловый формат: последовательно обрезайте каждый файл, затем загружайте все сразу. Добавлена кнопка "Пропустить этот файл".
+
+![croptmdb](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/croptmdb.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/tmdb_upload_helper.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/tmdb_upload_helper.user.js)
+
+## TMDB easy language selection
+
+When a TMDB language dropdown opens, it auto-filters the list so only the preferred language (e.g. ru-RU) remains. The language is set via the program's interface settings for running scripts.
+
+Когда открывается выпадающий список языков TMDB, он автоматически фильтрует список, так что остается только предпочтительный язык (например, ru-RU). Язык устанавливается через настройки интерфейса программы для запуска скриптов.
+
+![croptmdb](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/croptmdb.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/tmdb_easy_language_selection.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/tmdb_easy_language_selection.user.js)
 
 ## Import YandexMusic album into MusicBrainz (old design)
 
