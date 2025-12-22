@@ -157,7 +157,7 @@ When a TMDB language dropdown opens, it auto-filters the list so only the prefer
 
 Когда открывается выпадающий список языков TMDB, он автоматически фильтрует список, так что остается только предпочтительный язык (например, ru-RU). Язык устанавливается через настройки интерфейса программы для запуска скриптов.
 
-![croptmdb](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/croptmdb.jpg)
+![croptmdb](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/lang.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/tmdb_easy_language_selection.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/tmdb_easy_language_selection.user.js)
