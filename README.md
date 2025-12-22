@@ -93,7 +93,7 @@ For example. The image is 1920 x 1080 and png. If you download it for fanart, th
 1.2. Для изображений jpg.  Проверяем правильность соотношения сторон и минимальное разрешение изображения. Если изображение соответствует соотношению сторон но больше необходимого разрешения или в другом формате, то скрипт перед загрузкой сконвертируем изображение под необходимые требования.
 
 Например. Изображение 1920х1080 и png. Если загрузить его для fanart, то скрипт првоерит соотношение сторон и уменьшит его до 1280x720 и сконвертирует его в jpg и потом загрузит его на сайт.
-
+![crop](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/crop.jpg)
 ![easy](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/easy.jpg)
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/theaudiodb_easy_image_loading.user.js)
