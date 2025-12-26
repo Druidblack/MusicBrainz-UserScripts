@@ -72,6 +72,19 @@ We collect links to all the performers that can be obtained from the page. It ca
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/ymacp.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/ymacp.user.js)
 
+## Yandex Music save link txt
+
+Adds header buttons on Yandex Music (album/release/artist) to append current URL to a save link txt.
+
+Добавляет на страницу кнопку для сохранения текущей ссылки в текстовый документ (сохраняет ссылки на песни, альбомы, исполнителей). При первом запуске нужно выбрать тектовый файл в который будут сохранятся ссылки. Дальше скрипт проверяет наличие ссылок в файле. Если кнопка зеленая, то ссылка уже есть, если красная, то ссылки нет. Дубликаты не сохраняет.
+Сохраненные ссылки можно использовать для пакетного скачивания при помощи https://github.com/llistochek/yandex-music-downloader
+
+![green](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/green_button.jpg)
+![red](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/red_button.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/yandexmusic_save_link_txt.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/yandexmusic_save_link_txt.user.js)
+
 ## TheAudioDB: Easy image loading
 
 We upload images by dragging on the icon, converting the uploaded image according to the necessary requirements (we check the aspect ratio and convert it to jpg with high resolution) and checking the uploaded images.
