@@ -1,7 +1,7 @@
-# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru), [Harmony](https://harmony.pulsewidth.org.uk), [TheMovieDB](https://www.themoviedb.org/) - UserScripts
+# [MusicBrainz.org](https://musicbrainz.org), [TheAudioDB](https://www.theaudiodb.com), [YandexMusic](https://music.yandex.ru), [Harmony](https://harmony.pulsewidth.org.uk), [TheMovieDB](https://www.themoviedb.org/), [MediUX](https://mediux.pro) - UserScripts
 Collection of my MusicBrainz, AudioDB, YandexMusic and Harmony Userscripts
 
-# Collection of userscripts for MusicBrainz, AudioDB, YandexMusic and  Harmony.
+# Collection of userscripts for MusicBrainz, AudioDB, YandexMusic. MediUX and  Harmony.
 
 [community.metabrainz.org](https://community.metabrainz.org/t/a-new-musicbrainz-user-script-was-released/77897)
 
@@ -174,6 +174,24 @@ When a TMDB language dropdown opens, it auto-filters the list so only the prefer
 
 [![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/tmdb_easy_language_selection.user.js)
 [![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/tmdb_easy_language_selection.user.js)
+
+## MediUX → TMDb uploader
+
+A script that will help you from the movie or TV series page on the MediUX website using yaml links to send files for download on the website themoviedb.org . The script automates the sending of links from which images can be downloaded. The definition and the actual upload to the themoviedb website must be done manually.
+The script supports uploading images of movies, TV series, seasons, and episode images.
+
+To work correctly, you need to be on the video page where there is a link to themoviedb.org .
+
+Скрипт который поможет вас со страницы фильма или сериала на сайте MediUX при помощи yaml ссылок отправить файлы для загрузки на сайте themoviedb.org. Скрипт автоматизирует отправку ссылок с которых можно загрузить изображения. Определение и саму загрузку на сайт themoviedb нужно делать вручную.
+Скрипт поддерживает загрузку изображений фильмов, сериалов, сезонов и изображений серий.
+
+Для корректной работы нужно находится на странице видео где есть ссылка на themoviedb.org.
+
+![m1](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/m1.jpg)
+![m2](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/m2.jpg)
+
+[![Source](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Source-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/mediux_tmdb_uploader.user.js)
+[![Install](https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/add/Install-button.png)](https://github.com/Druidblack/MusicBrainz-UserScripts/raw/main/mediux_tmdb_uploader.user.js)
 
 ## Import YandexMusic album into MusicBrainz (old design)
 
