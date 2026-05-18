@@ -2,7 +2,7 @@
 
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.7
+// @version     2025.01.00.32.8
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -194,7 +194,12 @@
         addField(`mediums.${mediumIndex}.track.${trackIndex}.length`, track.durationMs || 0);
 
         if (track.artists.length > 0) {
-          addTrackArtistCredit(addField, `mediums.${mediumIndex}.track.${trackIndex}.artist_credit`, track.artists);
+          addTrackArtistCredit(
+            addField,
+            `mediums.${mediumIndex}.track.${trackIndex}.artist_credit`,
+            track.artists,
+            normalized.isAudiobook ? normalized.audioAuthorCount : 0
+          );
         }
       });
     });
@@ -332,7 +337,7 @@
         if (audioAuthorCount > 0 && i < audioAuthorCount) {
           if (i === audioAuthorCount - 1) {
             const remainder = names.length - audioAuthorCount;
-            const phrase = (remainder === 1) ? ', чтец: ' : (remainder >= 2 ? ', чтецы: ' : '');
+            const phrase = (remainder === 1) ? ' чтец: ' : (remainder >= 2 ? ' чтецы: ' : '');
             if (phrase) addField(`artist_credit.names.${i}.join_phrase`, phrase);
           } else {
             addField(`artist_credit.names.${i}.join_phrase`, ', ');
@@ -345,13 +350,26 @@
     });
   }
 
-  function addTrackArtistCredit(addField, baseName, names) {
+  function addTrackArtistCredit(addField, baseName, names, audioAuthorCount) {
     names = uniqueNames(names);
+    audioAuthorCount = Math.max(0, Number(audioAuthorCount) || 0);
+    const narratorCount = Math.max(0, names.length - audioAuthorCount);
+
     names.forEach((name, i) => {
       addField(`${baseName}.names.${i}.name`, name);
       if (names.length >= 2 && i !== names.length - 1) {
-        const joinPhrase = (i === names.length - 2) ? ' & ' : ', ';
-        addField(`${baseName}.names.${i}.join_phrase`, joinPhrase);
+        if (audioAuthorCount > 0 && i < audioAuthorCount) {
+          if (i < audioAuthorCount - 1) {
+            addField(`${baseName}.names.${i}.join_phrase`, ', ');
+          } else {
+            const phrase = narratorCount === 1 ? ' чтец: ' : (narratorCount >= 2 ? ' чтецы: ' : '');
+            if (phrase) addField(`${baseName}.names.${i}.join_phrase`, phrase);
+          }
+        } else {
+          const relativeIndex = i - audioAuthorCount;
+          const joinPhrase = (relativeIndex === narratorCount - 2) ? ' & ' : ', ';
+          addField(`${baseName}.names.${i}.join_phrase`, joinPhrase);
+        }
       }
     });
   }
