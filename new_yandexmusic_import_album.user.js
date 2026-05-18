@@ -1,14 +1,16 @@
 // ==UserScript==
+
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.6
+// @version     2025.01.00.32.7
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
 // @match       https://music.yandex.ru/*
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js
 // @run-at      document-idle
-// @grant       none
+// @grant       GM_xmlhttpRequest
+// @connect     api.music.yandex.net
 //
 // @icon        https://musicbrainz.org/favicon.ico
 //
@@ -62,7 +64,14 @@
             'div.PageHeaderBase_controls__HzGgE [class^="CommonPageHeader_controls__"]'
         );
 
-        if (!container || container.querySelector('.mb-buttons')) return;
+        if (!container) return;
+
+        const albumId = getYandexAlbumIdFromUrl(location.href);
+        const existing = container.querySelector('.mb-buttons');
+        if (existing) {
+          if (existing.dataset && existing.dataset.mbAlbumId === String(albumId || '')) return;
+          existing.remove();
+        }
         injectAlbumButtons(container);
     }
     // Артист (новый UI / старый UI)
@@ -94,44 +103,36 @@
     }
   }
 
-  // --- Альбомная логика (из версии 32.2) ---
-  function injectAlbumButtons(container) {
-    const rawTitle = $('span.PageHeaderTitle_title__caKyB').first().text().trim()
-      || $('.page-album__title span.deco-typo').first().text().trim()
-      || $('.page-album__title').text().trim();
-    let albumTitle = rawTitle;
+  // --- Альбомная логика: все данные берём из API /albums/{id}/with-tracks ---
+  async function injectAlbumButtons(container) {
+    const albumId = getYandexAlbumIdFromUrl(location.href);
+    if (!albumId) return;
 
-    const entityStr = $('div.PageHeaderBase_entityName__9Sj_Q').first().text().trim();
-    let relPrimary, relSecondary;
+    if (container.dataset.mbAlbumLoading === String(albumId)) return;
+    container.dataset.mbAlbumLoading = String(albumId);
 
-    // базовые исполнители из метаданных
-    const metaArtists = $('div.PageHeaderAlbumMeta_meta__zsMI8')
-      .find('span.PageHeaderAlbumMeta_artistLabel__2WZSM')
-      .map((i,el) => $(el).text().trim()).get();
-
-    // для аудио: вытаскиваем авторов из заголовка до ". «"
-    let audioAuthors = [], artistList = metaArtists;
-    if (entityStr.toUpperCase().includes('АУДИО')) {
-      relPrimary   = 'Other';
-      relSecondary = 'Audiobook';
-      // текст в кавычках
-      const m = rawTitle.match(/«([^»]+)»/);
-      if (m) albumTitle = m[1];
-      // авторы до ". «"
-      const authorsPart = rawTitle.split('. «')[0];
-      audioAuthors = authorsPart.split(',').map(a => a.trim()).filter(a => a);
-      artistList   = audioAuthors.concat(metaArtists);
-    }
-    else if (entityStr === 'Сингл') {
-      relPrimary = 'Single';
-    } else {
-      relPrimary = 'Album';
+    const apiUrl = `https://api.music.yandex.net/albums/${encodeURIComponent(albumId)}/with-tracks`;
+    let apiResponse;
+    try {
+      apiResponse = await requestJson(apiUrl);
+    } catch (err) {
+      console.error('[MusicBrainz/Yandex] Failed to fetch album data from Yandex API', err);
+      delete container.dataset.mbAlbumLoading;
+      return;
     }
 
-    const yearMatch  = $('div.PageHeaderAlbumMeta_year__2X3NO').first().text().match(/(\d{4})/);
-    const year       = yearMatch ? yearMatch[1] : null;
-    const label      = $('.page-album__label a.d-link').text().trim();
-    const comment = $('.PageHeaderTitle_version__g5BeO').text().trim();
+    const albumData = apiResponse && (apiResponse.result || apiResponse);
+    if (!albumData || !albumData.id) {
+      console.error('[MusicBrainz/Yandex] Unexpected Yandex API response', apiResponse);
+      delete container.dataset.mbAlbumLoading;
+      return;
+    }
+
+    const normalized = normalizeYandexAlbum(albumData);
+    if (container.querySelector('.mb-buttons')) {
+      delete container.dataset.mbAlbumLoading;
+      return;
+    }
 
     // создаём форму
     const form = document.createElement('form');
@@ -139,69 +140,21 @@
     form.target        = '_blank';
     form.action        = 'https://musicbrainz.org/release/add';
     form.acceptCharset = 'UTF-8';
+
     function addField(name, value) {
       const inp = document.createElement('input');
       inp.type  = 'hidden';
       inp.name  = name;
-      inp.value = value;
+      inp.value = value == null ? '' : value;
       form.appendChild(inp);
     }
 
-    // статические поля релиза
-    addField('mediums.0.format','Digital Media');
-    addField('name', albumTitle);
-
-    // artist_credit
-    if (relSecondary) {
-      const countAudio = audioAuthors.length;
-      const needPlural = (metaArtists.length > 1);
-      artistList.forEach((a,i) => {
-        addField(`artist_credit.names.${i}.artist.name`, a);
-        if (artistList.length > 1 && i < artistList.length - 1) {
-          if (i < countAudio) {
-            if (i < countAudio - 1) {
-              addField(`artist_credit.names.${i}.join_phrase`, ', ');
-            } else {
-              addField(
-                `artist_credit.names.${i}.join_phrase`,
-                needPlural ? ' чтецы: ' : ' чтец: '
-              );
-            }
-          } else {
-            const metaIndex = i - countAudio;
-            const sep = (metaIndex === metaArtists.length - 2) ? ' & ' : ', ';
-            addField(`artist_credit.names.${i}.join_phrase`, sep);
-          }
-        }
-      });
-    } else {
-      artistList.forEach((a,i) => {
-        addField(`artist_credit.names.${i}.artist.name`, a);
-        if (i < artistList.length - 1) {
-          const sep = (i === artistList.length - 2) ? ' & ' : ', ';
-          addField(`artist_credit.names.${i}.join_phrase`, sep);
-        }
-      });
-    }
-
-    addField('labels.0.name', label);
-    addField('packaging','None');
-    if (year) addField('date.year', year); // будет перезаписано, если API вернёт точную дату
-    addField('country','XW');
-    addField('status','official');
-    addField('type', relPrimary);
-    if (relSecondary) {
-      addField('type', relSecondary);
-      addField('language','rus');
-    }
-    if (comment) addField('comment', comment);
-    addField('edit_note','Imported from: '+location.href+' using script from https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js');
-    addField('urls.0.link_type','980');
-    addField('urls.0.url',location.href.replace(/\?.*$/,''));
+    buildReleaseFormFromYandexAlbum(form, addField, normalized, apiUrl);
 
     // контейнер кнопок
     const wrapper = document.createElement('div');
     wrapper.className        = 'mb-buttons';
+    wrapper.dataset.mbAlbumId = String(albumId);
     wrapper.style.display    = 'flex';
     wrapper.style.gap        = '20px';
     wrapper.style.alignItems = 'center';
@@ -211,7 +164,7 @@
     wrapForm.className = 'mbForm';
     wrapForm.appendChild(form);
     const btnAdd = document.createElement('input');
-    btnAdd.type  = 'button';
+    btnAdd.type  = 'submit';
     btnAdd.value = 'Add to MusicBrainz';
     styleButton(btnAdd);
     form.appendChild(btnAdd);
@@ -220,7 +173,7 @@
     // Search
     const btnSearch = document.createElement('a');
     btnSearch.href        = 'https://musicbrainz.org/search?query='
-                              + encodeURIComponent(albumTitle)+'&type=release';
+                              + encodeURIComponent(normalized.title)+'&type=release';
     btnSearch.target      = '_blank';
     styleButton(btnSearch);
     btnSearch.textContent = 'Search on MusicBrainz';
@@ -229,166 +182,276 @@
     container.appendChild(wrapper);
     syncButtons.push(btnAdd, btnSearch);
     setTimeout(updateButtonSizes, 0);
+    delete container.dataset.mbAlbumLoading;
+  }
 
-    // обработчик Add
-    btnAdd.addEventListener('click', async e => {
-      e.preventDefault();
-      btnAdd.disabled = true;
-      btnAdd.value    = 'Loading…';
+  function buildReleaseFormFromYandexAlbum(form, addField, normalized, apiUrl) {
+    normalized.volumes.forEach((volume, mediumIndex) => {
+      addField(`mediums.${mediumIndex}.format`, 'Digital Media');
 
-      // раскрыть «и ещё N»
-      const spoiler = document.querySelector('a.PageHeaderAlbumMeta_artistsSpoiler__VOkfE');
-      if (spoiler) {
-        spoiler.removeAttribute('href');
-        spoiler.dispatchEvent(new MouseEvent('click',{bubbles:true}));
-        await new Promise(r=>setTimeout(r,100));
-      }
+      volume.forEach((track, trackIndex) => {
+        addField(`mediums.${mediumIndex}.track.${trackIndex}.name`, track.title);
+        addField(`mediums.${mediumIndex}.track.${trackIndex}.length`, track.durationMs || 0);
 
-      // пересобирать metaArtists
-      const updatedMetaArtists = $('span.PageHeaderAlbumMeta_artistLabel__2WZSM')
-        .map((i,el)=>$(el).text().trim()).get();
-      let dynAlbumList = updatedMetaArtists;
-      if (relSecondary) dynAlbumList = audioAuthors.concat(updatedMetaArtists);
-
-      // очистить старые artist_credit
-      Array.from(form.querySelectorAll('input[name^="artist_credit.names"]'))
-        .forEach(i=>i.remove());
-
-      // вставить заново
-      if (relSecondary) {
-        const countAudio = audioAuthors.length;
-        const needPlural = (metaArtists.length > 1);
-        dynAlbumList.forEach((a,i) => {
-          addField(`artist_credit.names.${i}.artist.name`, a);
-          if (dynAlbumList.length > 1 && i < dynAlbumList.length - 1) {
-            if (i < countAudio) {
-              if (i < countAudio - 1) addField(`artist_credit.names.${i}.join_phrase`, ', ');
-              else                    addField(
-                                         `artist_credit.names.${i}.join_phrase`,
-                                         needPlural ? ' чтецы: ' : ' чтец: '
-                                       );
-            } else {
-              const metaIndex = i - countAudio;
-              const sep = (metaIndex === updatedMetaArtists.length - 2) ? ' & ' : ', ';
-              addField(`artist_credit.names.${i}.join_phrase`, sep);
-            }
-          }
-        });
-      } else {
-        dynAlbumList.forEach((a,i) => {
-          addField(`artist_credit.names.${i}.artist.name`, a);
-          if (i < dynAlbumList.length - 1) {
-            const sep = (i === dynAlbumList.length - 2) ? ' & ' : ', ';
-            addField(`artist_credit.names.${i}.join_phrase`, sep);
-          }
-        });
-      }
-
-      // --- NEW: releaseDate from Yandex API ---
-      try {
-        const m = location.pathname.match(/\/album\/(\d+)/);
-        const albumId = m ? m[1] : null;
-        if (albumId) {
-          const r = await fetch(`https://api.music.yandex.net/albums/${albumId}`);
-          const j = await r.json();
-
-          // Пытаемся найти releaseDate в разных формах ответа
-          let rd = null;
-          if (j && j.result) {
-            if (Array.isArray(j.result.albums) && j.result.albums[0]?.releaseDate) {
-              rd = j.result.albums[0].releaseDate;
-            } else if (j.result.releaseDate) {
-              rd = j.result.releaseDate;
-            } else if (j.result.album?.releaseDate) {
-              rd = j.result.album.releaseDate;
-            }
-          } else if (j && j.releaseDate) {
-            rd = j.releaseDate;
-          }
-
-          if (rd) {
-            const mdt = String(rd).match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (mdt) {
-              const yy = mdt[1];
-              const mm = String(parseInt(mdt[2], 10)); // без ведущих нулей
-              const dd = String(parseInt(mdt[3], 10)); // без ведущих нулей
-              // Удаляем старые поля даты (включая год со страницы), ставим точную дату из API
-              Array.from(form.querySelectorAll('input[name^="date."]')).forEach(i=>i.remove());
-              addField('date.year',  yy);
-              addField('date.month', mm);
-              addField('date.day',   dd);
-            }
-          }
+        if (track.artists.length > 0) {
+          addTrackArtistCredit(addField, `mediums.${mediumIndex}.track.${trackIndex}.artist_credit`, track.artists);
         }
-      } catch (err) {
-        console.warn('Failed to fetch releaseDate from Yandex API', err);
-        // Fallback: останется ранее добавленный date.year (если был найден на странице)
-      }
-      // --- /NEW ---
+      });
+    });
 
-      // получить треки
-      const m2 = location.pathname.match(/\/album\/(\d+)/);
-      if (m2) {
-        try {
-          const res  = await fetch(`/handlers/album.jsx?album=${m2[1]}&external-domain=music.yandex.ru`);
-          const data = await res.json();
-          let tracks = [];
-          if (Array.isArray(data.volumes)) data.volumes.forEach(v=>v.forEach(t=>tracks.push(t)));
-          else if (Array.isArray(data.tracks)) tracks = data.tracks;
+    addField('name', normalized.title);
+    addReleaseArtistCredit(addField, normalized.artistList, normalized.audioAuthorCount);
 
-          // очистить старые
-          Array.from(form.querySelectorAll('input[name^="mediums.0.track"]'))
-            .forEach(i=>i.remove());
+    normalized.labels.forEach((labelName, index) => {
+      addField(`labels.${index}.name`, labelName);
+    });
 
-          tracks.forEach((t,i)=>{
-            addField(`mediums.0.track.${i}.name`,t.title||'');
-            addField(`mediums.0.track.${i}.length`,t.durationMs);
+    addField('packaging','None');
+    addDateFields(addField, normalized.releaseDate, normalized.year);
+    addField('country','XW');
+    addField('status','official');
 
-            const trackMeta = (t.artists||[]).map(ar=>ar.name);
-            const trackList = relSecondary
-              ? audioAuthors.concat(trackMeta)
-              : trackMeta;
+    if (normalized.isAudiobook) {
+      addField('type', 'Other');
+      addField('type', 'Audiobook');
+      addField('language','rus');
+    } else {
+      addField('type', normalized.type);
+    }
 
-            if (relSecondary) {
-              const countA = audioAuthors.length;
-              const needPl = (updatedMetaArtists.length > 1);
-              trackList.forEach((nm,j) => {
-                addField(`mediums.0.track.${i}.artist_credit.names.${j}.name`, nm);
-                if (trackList.length > 1 && j < trackList.length - 1) {
-                  if (j < countA) {
-                    if (j < countA - 1) addField(`mediums.0.track.${i}.artist_credit.names.${j}.join_phrase`, ', ');
-                    else                 addField(
-                                            `mediums.0.track.${i}.artist_credit.names.${j}.join_phrase`,
-                                            needPl ? ' чтецы: ' : ' чтец: '
-                                          );
-                  } else {
-                    const idx = j - countA;
-                    const sep = (idx === trackMeta.length - 2) ? ' & ' : ', ';
-                    addField(`mediums.0.track.${i}.artist_credit.names.${j}.join_phrase`, sep);
-                  }
-                }
-              });
-            } else {
-              trackList.forEach((nm,j) => {
-                addField(`mediums.0.track.${i}.artist_credit.names.${j}.name`, nm);
-                if (j < trackList.length - 1) {
-                  const sep = (j === trackList.length - 2) ? ' & ' : ', ';
-                  addField(`mediums.0.track.${i}.artist_credit.names.${j}.join_phrase`, sep);
-                }
-              });
-            }
-          });
-        } catch(err) {
-          console.error('Failed to fetch tracklist', err);
+    if (normalized.annotation) addField('annotation', normalized.annotation);
+    addField('edit_note','Imported from: '+normalized.sourceUrl+' using metadata API: '+apiUrl+' and script from https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js');
+    addField('urls.0.link_type','980');
+    addField('urls.0.url', normalized.sourceUrl);
+  }
+
+  function normalizeYandexAlbum(albumData) {
+    const isAudiobook = albumData.type === 'audiobook' || albumData.metaType === 'podcast';
+    const rawTitle = cleanText(albumData.title);
+    let normalizedTitle = rawTitle;
+    let audioAuthors = [];
+    let releaseArtists = namesFromArtists(albumData.artists);
+
+    if (isAudiobook) {
+      const parsedAudioTitle = parseAudiobookTitle(rawTitle);
+      normalizedTitle = parsedAudioTitle.title || rawTitle;
+      audioAuthors = parsedAudioTitle.authors;
+
+      // Для аудиокниг авторы часто есть только в названии API-релиза.
+      // Если в API есть исполнители/чтецы, добавляем их после авторов.
+      releaseArtists = mergeUnique(audioAuthors, releaseArtists);
+      if (releaseArtists.length === 0 && rawTitle) releaseArtists = [rawTitle];
+    } else if (releaseArtists.length === 0) {
+      // Редкий fallback: если у релиза нет artists, берём уникальных исполнителей из треков API.
+      releaseArtists = uniqueNames(flattenVolumes(albumData.volumes).reduce((acc, track) => {
+        return acc.concat(namesFromArtists(track && track.artists));
+      }, []));
+    }
+
+    const volumes = normalizeVolumes(albumData.volumes, isAudiobook ? audioAuthors : []);
+    const labels = uniqueNames((albumData.labels || []).map(label => cleanText(label && label.name)));
+
+    return {
+      id: albumData.id,
+      title: normalizedTitle,
+      year: albumData.year || yearFromReleaseDate(albumData.releaseDate) || '',
+      releaseDate: albumData.releaseDate || '',
+      type: detectMusicBrainzReleaseType(albumData, volumes, isAudiobook),
+      isAudiobook,
+      audioAuthorCount: audioAuthors.length,
+      artistList: releaseArtists,
+      labels,
+      volumes,
+      annotation: '',
+      sourceUrl: buildCleanYandexAlbumUrl(albumData.id)
+    };
+  }
+
+  function normalizeVolumes(volumes, defaultTrackArtists) {
+    defaultTrackArtists = uniqueNames(defaultTrackArtists || []);
+    if (!Array.isArray(volumes) || volumes.length === 0) return [[]];
+
+    return volumes.map(volume => {
+      if (!Array.isArray(volume)) return [];
+      return volume.map(track => ({
+        title: cleanText(track && track.title),
+        durationMs: Number(track && track.durationMs) || 0,
+        artists: mergeUnique(defaultTrackArtists, namesFromArtists(track && track.artists))
+      })).filter(track => track.title.length > 0);
+    }).filter(volume => volume.length > 0);
+  }
+
+  function flattenVolumes(volumes) {
+    if (!Array.isArray(volumes)) return [];
+    return volumes.reduce((acc, volume) => Array.isArray(volume) ? acc.concat(volume) : acc, []);
+  }
+
+  function parseAudiobookTitle(title) {
+    const result = { title, authors: [] };
+    if (!title) return result;
+
+    const match = title.match(/^(.*?)«(.*?)»/);
+    if (!match) return result;
+
+    const authorsPart = cleanText(match[1]).replace(/[.\s]+$/, '');
+    const releaseTitle = cleanText(match[2]);
+
+    if (releaseTitle) result.title = releaseTitle;
+    result.authors = splitPeople(authorsPart);
+    return result;
+  }
+
+  function splitPeople(value) {
+    if (!value) return [];
+    return uniqueNames(value.split(/,|;|\s+и\s+/i).map(name => cleanText(name).replace(/[.\s]+$/, '')));
+  }
+
+  function detectMusicBrainzReleaseType(albumData, volumes, isAudiobook) {
+    if (isAudiobook) return 'Other';
+
+    const apiType = String(albumData.type || '').toLowerCase();
+    if (apiType === 'single') return 'Single';
+    if (apiType === 'ep') return 'EP';
+    if (apiType === 'album') return 'Album';
+
+    const trackCount = Number(albumData.trackCount) || flattenNormalizedVolumes(volumes).length;
+    return trackCount === 1 ? 'Single' : 'Album';
+  }
+
+  function flattenNormalizedVolumes(volumes) {
+    if (!Array.isArray(volumes)) return [];
+    return volumes.reduce((acc, volume) => acc.concat(Array.isArray(volume) ? volume : []), []);
+  }
+
+  function addReleaseArtistCredit(addField, names, audioAuthorCount) {
+    names = uniqueNames(names);
+    names.forEach((name, i) => {
+      addField(`artist_credit.names.${i}.artist.name`, name);
+
+      if (names.length >= 2 && i !== names.length - 1) {
+        if (audioAuthorCount > 0 && i < audioAuthorCount) {
+          if (i === audioAuthorCount - 1) {
+            const remainder = names.length - audioAuthorCount;
+            const phrase = (remainder === 1) ? ', чтец: ' : (remainder >= 2 ? ', чтецы: ' : '');
+            if (phrase) addField(`artist_credit.names.${i}.join_phrase`, phrase);
+          } else {
+            addField(`artist_credit.names.${i}.join_phrase`, ', ');
+          }
+        } else {
+          const joinPhrase = (i === names.length - 2) ? ' & ' : ', ';
+          addField(`artist_credit.names.${i}.join_phrase`, joinPhrase);
         }
       }
+    });
+  }
 
-      btnAdd.value = 'Submitting…';
-      form.submit();
-      setTimeout(() => {
-        btnAdd.disabled = false;
-        btnAdd.value    = 'Add to MusicBrainz';
-      }, 1000);
+  function addTrackArtistCredit(addField, baseName, names) {
+    names = uniqueNames(names);
+    names.forEach((name, i) => {
+      addField(`${baseName}.names.${i}.name`, name);
+      if (names.length >= 2 && i !== names.length - 1) {
+        const joinPhrase = (i === names.length - 2) ? ' & ' : ', ';
+        addField(`${baseName}.names.${i}.join_phrase`, joinPhrase);
+      }
+    });
+  }
+
+  function addDateFields(addField, releaseDate, fallbackYear) {
+    const match = String(releaseDate || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      addField('date.year',  match[1]);
+      addField('date.month', String(parseInt(match[2], 10)));
+      addField('date.day',   String(parseInt(match[3], 10)));
+      return;
+    }
+
+    if (fallbackYear) addField('date.year', fallbackYear);
+  }
+
+  function namesFromArtists(artists) {
+    if (!Array.isArray(artists)) return [];
+    return uniqueNames(artists.map(artist => cleanText(artist && artist.name)));
+  }
+
+  function mergeUnique(first, second) {
+    return uniqueNames([].concat(first || [], second || []));
+  }
+
+  function uniqueNames(names) {
+    const result = [];
+    const seen = {};
+    (names || []).forEach(name => {
+      name = cleanText(name);
+      if (!name) return;
+      const key = name.toLocaleLowerCase();
+      if (seen[key]) return;
+      seen[key] = true;
+      result.push(name);
+    });
+    return result;
+  }
+
+  function cleanText(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&laquo;/g, '«')
+      .replace(/&raquo;/g, '»')
+      .replace(/&#8212;/g, '—')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function yearFromReleaseDate(releaseDate) {
+    const match = String(releaseDate || '').match(/^(\d{4})/);
+    return match ? match[1] : '';
+  }
+
+  function getYandexAlbumIdFromUrl(url) {
+    const match = String(url || '').match(/\/album\/(\d+)/);
+    return match ? match[1] : null;
+  }
+
+  function buildCleanYandexAlbumUrl(albumId) {
+    return `${location.protocol}//music.yandex.ru/album/${encodeURIComponent(albumId)}`;
+  }
+
+  function requestJson(url) {
+    return new Promise((resolve, reject) => {
+      if (typeof GM_xmlhttpRequest === 'function') {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url,
+          headers: { 'Accept': 'application/json' },
+          onload: response => {
+            if (response.status < 200 || response.status >= 300) {
+              reject(new Error('HTTP '+response.status+': '+response.responseText));
+              return;
+            }
+            try {
+              resolve(JSON.parse(response.responseText));
+            } catch (err) {
+              reject(err);
+            }
+          },
+          onerror: reject,
+          ontimeout: reject
+        });
+        return;
+      }
+
+      fetch(url, { credentials: 'include', headers: { 'Accept': 'application/json' } })
+        .then(response => {
+          if (!response.ok) throw new Error('HTTP '+response.status);
+          return response.json();
+        })
+        .then(resolve)
+        .catch(reject);
     });
   }
 
