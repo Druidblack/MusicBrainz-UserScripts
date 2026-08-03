@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Yandex Music → Deezer → Harmony (Album Finder)
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
-// @version      1.4.0
+// @version      1.4.1
 // @description  On the album page, Yandex Music searches for a release in Deezer and opens Harmony;
 // @author       Druidblack
 // @match        https://music.yandex.ru/album/*
@@ -27,34 +27,25 @@
     .ym2deezer-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      /* padding/height/radius подтягиваются из кнопки «Слушать» скриптом */
-      font: 600 14px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, sans-serif;
-      text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,.18);
-      transition: background-color .12s ease, box-shadow .12s ease, opacity .12s ease;
-      color: #000 !important;
-      background: #5a5a5a; /* базовый фон (если вдруг без state-класса) */
-      white-space: nowrap;
-      border: none;
-      cursor: pointer;
-      margin: 0 8px;
+      box-sizing: border-box;
+      margin: 0;
       vertical-align: middle;
+      white-space: nowrap;
+      text-decoration: none;
+      cursor: pointer;
+      color: #000 !important;
+      background-image: none !important;
     }
 
-    /* фиксируем чёрный цвет текста во всех состояниях */
-    .ym2deezer-btn,
-    .ym2deezer-btn:visited,
     .ym2deezer-btn:hover,
-    .ym2deezer-btn:active { color: #000 !important; }
-
-    .ym2deezer-btn:hover {
-      transform: none; /* не «прыгает» */
-      box-shadow: 0 6px 16px rgba(0,0,0,.22);
-      /* фон задаём только в state-hover ниже, чтобы не мигало */
+    .ym2deezer-btn:active,
+    .ym2deezer-btn:focus-visible {
+      color: #000 !important;
+      transform: none;
     }
 
-    /* иконка Harmony вместо текста */
     .ym2deezer-icon {
       width: 18px;
       height: 18px;
@@ -63,41 +54,48 @@
       vertical-align: middle;
       object-fit: contain;
       image-rendering: auto;
+      pointer-events: none;
     }
 
-    /* плавающий режим — как fallback, если не нашли место в шапке */
+    /* Не рисуем отдельную "капсулу" внутри нативной кнопки. */
+    .ym2deezer-badge {
+      display: inline;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: none;
+      color: inherit !important;
+      font: inherit;
+      line-height: inherit;
+      pointer-events: none;
+    }
+
+    /* Плавающий режим — только fallback, пока шапка альбома не отрисована. */
     .ym2deezer--floating {
       position: fixed;
       top: 12px;
       right: 12px;
       z-index: 99999;
-      margin: 0;
-      border-radius: 10px; /* fallback, если «Слушать» не найдена */
-      padding: 8px 14px;   /* fallback */
+      min-height: 40px;
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 10px;
+      font: 600 14px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, sans-serif;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
     }
 
-    .ym2deezer-badge {
-      display: inline-block;
-      font: 700 11px/1 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, sans-serif;
-      padding: 3px 6px;
-      border-radius: 6px;
-      background: rgba(255,255,255,.2);
-      color: #000 !important;
-    }
+    /* Цвета состояний. !important нужен, чтобы перебить фон нативного класса. */
+    .ym2deezer--searching { background-color: #ff9f1c !important; }
+    .ym2deezer--found     { background-color: #2ecc71 !important; }
+    .ym2deezer--fallback  { background-color: #3498db !important; }
+    .ym2deezer--error     { background-color: #e74c3c !important; }
 
-    /* состояния (основные цвета) */
-    .ym2deezer--searching { background-color: #ff9f1c; }
-    .ym2deezer--found     { background-color: #2ecc71; }
-    .ym2deezer--fallback  { background-color: #3498db; }
-    .ym2deezer--error     { background-color: #e74c3c; }
+    .ym2deezer--searching:hover { background-color: #ffad42 !important; }
+    .ym2deezer--found:hover     { background-color: #55d88a !important; }
+    .ym2deezer--fallback:hover  { background-color: #4aa6e1 !important; }
+    .ym2deezer--error:hover     { background-color: #ef6b60 !important; }
 
-    /* лёгкое осветление на hover — без конфликтов и мерцания */
-    .ym2deezer--searching:hover { background-color: #ffad42; }
-    .ym2deezer--found:hover     { background-color: #55d88a; }
-    .ym2deezer--fallback:hover  { background-color: #4aa6e1; }
-    .ym2deezer--error:hover     { background-color: #ef6b60; }
-
-    /* скрыть кнопку на не-альбомных страницах */
     .ym2deezer--hidden { display: none !important; }
   `);
 
@@ -106,17 +104,29 @@
 
   function ensureButton() {
     if (btn) return btn;
-    btn = document.createElement('a');
+
+    // Используем настоящий button, как и стандартные элементы интерфейса.
+    btn = document.createElement('button');
+    btn.type = 'button';
     btn.className = 'ym2deezer-btn ym2deezer--searching ym2deezer--floating';
-    btn.href = '#';
-    btn.target = '_blank';
-    btn.rel = 'noopener';
+    btn.dataset.href = '';
     btn.title = 'Open in Harmony (via Deezer)';
+    btn.setAttribute('aria-label', 'Open in Harmony via Deezer');
+    btn.setAttribute('aria-disabled', 'true');
 
     btn.innerHTML = `
-      <img class="ym2deezer-icon" alt="Harmony icon">
+      <img class="ym2deezer-icon" alt="">
       <span class="ym2deezer-badge">Searching…</span>
     `;
+
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const href = btn.dataset.href;
+      if (!href) return;
+      window.open(href, '_blank', 'noopener,noreferrer');
+    });
 
     const iconEl = btn.querySelector('.ym2deezer-icon');
     loadHarmonyIcon(iconEl); // грузим иконку через GMXHR + blob (обход CSP)
@@ -133,7 +143,8 @@
     const badge = btn.querySelector('.ym2deezer-badge');
     if (badge) badge.textContent = text || '';
 
-    if (href) btn.href = href;
+    btn.dataset.href = href && href !== '#' ? href : '';
+    btn.setAttribute('aria-disabled', btn.dataset.href ? 'false' : 'true');
   }
 
   // показать/скрыть на не-альбомных страницах
@@ -142,7 +153,8 @@
   function hideButton() {
     if (!btn) return;
     btn.classList.add('ym2deezer--hidden');
-    btn.href = '#';
+    btn.dataset.href = '';
+    btn.setAttribute('aria-disabled', 'true');
     const badge = btn.querySelector('.ym2deezer-badge');
     if (badge) badge.textContent = '';
   }
@@ -159,58 +171,86 @@
     const playBtn    = document.querySelector('button[aria-label="Воспроизведение"]');
     const trailerBtn = document.querySelector('button[aria-label="Запустить трейлер"]');
 
-    // Вставка строго перед «Трейлер»
+    // Вставка строго перед «Трейлер».
     if (playBtn && trailerBtn && trailerBtn.parentElement) {
       const parent = trailerBtn.parentElement;
-      // Если уже стоит прямо перед «Трейлер» — ничего не делаем
-      if (btn.parentElement === parent && btn.nextSibling === trailerBtn) {
-        btn.classList.remove('ym2deezer--floating');
-        return true;
+      if (btn.parentElement !== parent || btn.nextSibling !== trailerBtn) {
+        parent.insertBefore(btn, trailerBtn);
       }
-      parent.insertBefore(btn, trailerBtn);
       btn.classList.remove('ym2deezer--floating');
-      syncShapeWithPlay();
+      syncShapeWithNativeButton(trailerBtn);
       return true;
     }
 
-    // Если «Трейлер» нет — ставим сразу после «Слушать»
+    // Если «Трейлер» нет — ставим сразу после «Слушать».
     if (playBtn && playBtn.parentElement) {
-      if (playBtn.nextSibling === btn) {
-        btn.classList.remove('ym2deezer--floating');
-        return true;
+      if (playBtn.nextSibling !== btn) {
+        playBtn.insertAdjacentElement('afterend', btn);
       }
-      playBtn.insertAdjacentElement('afterend', btn);
       btn.classList.remove('ym2deezer--floating');
-      syncShapeWithPlay();
+      syncShapeWithNativeButton(playBtn);
       return true;
     }
 
-    // Фолбэк — плавающая кнопка
-    if (!btn.classList.contains('ym2deezer--floating')) {
-      btn.classList.add('ym2deezer--floating');
-    }
+    // Фолбэк — плавающая кнопка.
+    btn.classList.add('ym2deezer--floating');
     return false;
   }
 
-  // Подгоняем форму под кнопку «Слушать»: высота, радиусы, паддинги, типографика
-  function syncShapeWithPlay() {
+  // Берём классы и геометрию соседней нативной кнопки Яндекс Музыки.
+  function syncShapeWithNativeButton(referenceBtn = null) {
     if (!btn) return;
+
     const playBtn = document.querySelector('button[aria-label="Воспроизведение"]');
-    if (!playBtn) return;
+    const trailerBtn = document.querySelector('button[aria-label="Запустить трейлер"]');
+    const ref = referenceBtn || trailerBtn || playBtn;
+    if (!ref || ref === btn) return;
 
-    const cs = getComputedStyle(playBtn);
+    // CSS-модули Яндекс Музыки используют динамические имена классов.
+    // Копируем их с соседней кнопки, сохраняя собственные state-классы.
+    const ownClasses = Array.from(btn.classList).filter((name) => name.startsWith('ym2deezer'));
+    const nativeClasses = Array.from(ref.classList).filter((name) => !name.startsWith('ym2deezer'));
+    btn.className = [...nativeClasses, ...ownClasses].join(' ');
 
-    btn.style.height        = cs.height;
-    btn.style.borderRadius  = cs.borderRadius;
+    const cs = getComputedStyle(ref);
+    const shapeProperties = [
+      'box-sizing',
+      'height',
+      'min-height',
+      'max-height',
+      'padding-top',
+      'padding-right',
+      'padding-bottom',
+      'padding-left',
+      'border-top-width',
+      'border-right-width',
+      'border-bottom-width',
+      'border-left-width',
+      'border-top-style',
+      'border-right-style',
+      'border-bottom-style',
+      'border-left-style',
+      'border-top-color',
+      'border-right-color',
+      'border-bottom-color',
+      'border-left-color',
+      'border-radius',
+      'box-shadow',
+      'font-family',
+      'font-size',
+      'font-weight',
+      'font-style',
+      'line-height',
+      'letter-spacing',
+      'text-transform'
+    ];
 
-    btn.style.paddingTop    = cs.paddingTop;
-    btn.style.paddingBottom = cs.paddingBottom;
-    btn.style.paddingLeft   = cs.paddingLeft;
-    btn.style.paddingRight  = cs.paddingRight;
+    for (const property of shapeProperties) {
+      btn.style.setProperty(property, cs.getPropertyValue(property));
+    }
 
-    btn.style.fontSize      = cs.fontSize;
-    btn.style.lineHeight    = cs.lineHeight;
-    btn.style.fontWeight    = cs.fontWeight;
+    // Родительский контейнер сам задаёт расстояние между кнопками через gap.
+    btn.style.margin = '0';
   }
 
   // ---------- Helpers ----------
@@ -413,7 +453,7 @@
             if (placed) break;
             await sleep(100);
           }
-          syncShapeWithPlay();
+          syncShapeWithNativeButton();
           processAlbum(id);
         } else {
           // Не страница альбома — прячем кнопку
@@ -423,7 +463,7 @@
         // Поддерживаем позицию и форму только на страницах альбома
         if (isAlbumPage()) {
           placeButtonInline();
-          syncShapeWithPlay();
+          syncShapeWithNativeButton();
         } else {
           hideButton();
         }
@@ -434,7 +474,7 @@
 
   window.addEventListener('resize', () => {
     // при изменении размеров подровняем форму под «Слушать»
-    if (isAlbumPage()) syncShapeWithPlay();
+    if (isAlbumPage()) syncShapeWithNativeButton();
   });
 
   // ---------- Start ----------
