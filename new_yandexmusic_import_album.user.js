@@ -2,12 +2,11 @@
 
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.8
+// @version     2025.01.00.32.9
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
 // @match       https://music.yandex.ru/*
-// @require     https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js
 // @run-at      document-idle
 // @grant       GM_xmlhttpRequest
 // @connect     api.music.yandex.net
@@ -21,168 +20,405 @@
 (function() {
   'use strict';
 
-  const $ = jQuery.noConflict(true);
-  const syncButtons = [];
+  const BUTTON_CLASS = 'mb-yandex-native-button';
+  const WRAPPER_CLASS = 'mb-yandex-buttons';
+  const HEADER_SELECTOR = '[class*="PageHeaderBase_controls__"]';
+  const PLAY_SELECTOR = 'button[aria-label="Воспроизведение"]';
+  const TRAILER_SELECTOR = 'button[aria-label="Запустить трейлер"]';
 
-  // Подстройка размеров кнопок под «Слушать»
-  function updateButtonSizes() {
-    const listen = document.querySelector(
-      'div.PageHeaderBase_controls__HzGgE button[aria-label="Воспроизведение"]'
+  const syncButtons = new Set();
+  const albumCache = new Map();
+  const loadingAlbums = new Set();
+  let injectScheduled = false;
+
+  injectStyles();
+
+  function injectStyles() {
+    if (document.getElementById('mb-yandex-button-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'mb-yandex-button-styles';
+    style.textContent = `
+      .${WRAPPER_CLASS} {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        vertical-align: middle;
+      }
+
+      .${WRAPPER_CLASS} .mbForm {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+      }
+
+      .${BUTTON_CLASS} {
+        -webkit-appearance: none;
+        appearance: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        min-height: 40px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+        cursor: pointer;
+        text-decoration: none;
+        font: 600 14px/1.2 inherit;
+        background-color: #ffcc33 !important;
+        color: #121212 !important;
+        transition: background-color .15s ease, opacity .15s ease;
+      }
+
+      .${BUTTON_CLASS}:hover {
+        background-color: #ffd966 !important;
+      }
+
+      .${BUTTON_CLASS}:active {
+        background-color: #f5c229 !important;
+      }
+
+      .${BUTTON_CLASS}:disabled {
+        cursor: default;
+        opacity: .55;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function findHeaderRoot() {
+    return document.querySelector(HEADER_SELECTOR);
+  }
+
+  function findNativeButton(root = document) {
+    if (!root) return null;
+    return root.querySelector(
+      `${PLAY_SELECTOR}, ${TRAILER_SELECTOR}, button:not(.${BUTTON_CLASS})`
     );
-    if (!listen) return;
-    const cs = getComputedStyle(listen), h = parseFloat(cs.height);
-    syncButtons.forEach(el => {
-      el.style.display       = 'inline-flex';
-      el.style.alignItems    = 'center';
-      el.style.height        = cs.height;
-      el.style.borderRadius  = cs.borderRadius;
-      el.style.paddingTop    = cs.paddingTop;
-      el.style.paddingBottom = cs.paddingBottom;
-      el.style.paddingLeft   = cs.paddingLeft;
-      el.style.paddingRight  = cs.paddingRight;
-      el.style.fontSize      = cs.fontSize;
-      el.style.fontWeight    = cs.fontWeight;
-      el.style.fontFamily    = cs.fontFamily;
+  }
+
+  function findAlbumPlacement() {
+    const root = findHeaderRoot();
+    if (!root) return null;
+
+    const play = root.querySelector(PLAY_SELECTOR);
+    const trailer = root.querySelector(TRAILER_SELECTOR);
+    const controls =
+      (trailer && trailer.parentElement) ||
+      (play && play.parentElement) ||
+      root.querySelector('[class*="CommonPageHeader_controls__"]');
+
+    if (!controls) return null;
+    return { root, controls, play, trailer, reference: trailer || play || findNativeButton(root) };
+  }
+
+  function findArtistPlacement() {
+    const root = findHeaderRoot();
+    if (!root) return null;
+
+    const play = root.querySelector(PLAY_SELECTOR);
+    const controls =
+      (play && play.parentElement) ||
+      root.querySelector('[class*="PageHeaderArtist_controls__"]') ||
+      root.querySelector('[class*="CommonPageHeader_controls__"]');
+
+    if (!controls) return null;
+    return { root, controls, play, reference: play || findNativeButton(root) };
+  }
+
+  function placeAlbumWrapper(wrapper) {
+    const placement = findAlbumPlacement();
+    if (!placement) return false;
+
+    const { controls, play, trailer } = placement;
+    if (trailer && trailer.parentElement === controls) {
+      if (wrapper.parentElement !== controls || wrapper.nextElementSibling !== trailer) {
+        controls.insertBefore(wrapper, trailer);
+      }
+    } else if (play && play.parentElement === controls) {
+      if (wrapper.parentElement !== controls || play.nextElementSibling !== wrapper) {
+        play.insertAdjacentElement('afterend', wrapper);
+      }
+    } else if (wrapper.parentElement !== controls) {
+      controls.appendChild(wrapper);
+    }
+
+    syncWrapper(wrapper, placement.reference, controls);
+    return true;
+  }
+
+  function placeArtistWrapper(wrapper) {
+    const placement = findArtistPlacement();
+    if (!placement) return false;
+
+    const { controls } = placement;
+    if (wrapper.parentElement !== controls || controls.firstElementChild !== wrapper) {
+      controls.prepend(wrapper);
+    }
+
+    syncWrapper(wrapper, placement.reference, controls);
+    return true;
+  }
+
+  function registerButton(button) {
+    syncButtons.add(button);
+    return button;
+  }
+
+  function createActionButton(text, type = 'button') {
+    const button = document.createElement('button');
+    button.type = type;
+    button.className = BUTTON_CLASS;
+    button.textContent = text;
+    return registerButton(button);
+  }
+
+  function syncButtonWithNative(button, nativeButton) {
+    if (!button || !nativeButton || button === nativeButton) return;
+
+    const cs = getComputedStyle(nativeButton);
+    const properties = [
+      'boxSizing',
+      'height',
+      'minHeight',
+      'paddingTop',
+      'paddingRight',
+      'paddingBottom',
+      'paddingLeft',
+      'borderTopWidth',
+      'borderRightWidth',
+      'borderBottomWidth',
+      'borderLeftWidth',
+      'borderTopStyle',
+      'borderRightStyle',
+      'borderBottomStyle',
+      'borderLeftStyle',
+      'borderTopColor',
+      'borderRightColor',
+      'borderBottomColor',
+      'borderLeftColor',
+      'borderTopLeftRadius',
+      'borderTopRightRadius',
+      'borderBottomRightRadius',
+      'borderBottomLeftRadius',
+      'fontFamily',
+      'fontSize',
+      'fontWeight',
+      'fontStyle',
+      'lineHeight',
+      'letterSpacing',
+      'textTransform',
+      'boxShadow',
+      'outlineOffset',
+      'overflow',
+      'textAlign',
+      'verticalAlign',
+      'flexShrink'
+    ];
+
+    properties.forEach(property => {
+      button.style[property] = cs[property];
     });
-    document.querySelectorAll('.mb-buttons').forEach(container => {
-      container.style.gap = (h * 0.3) + 'px';
+
+    // Ширина остаётся автоматической: длинный текст не должен обрезаться.
+    button.style.width = 'auto';
+    button.style.minWidth = '0';
+    button.style.maxWidth = 'none';
+    button.style.display = 'inline-flex';
+    button.style.alignItems = 'center';
+    button.style.justifyContent = 'center';
+    button.style.margin = '0';
+    button.style.whiteSpace = 'nowrap';
+  }
+
+  function getNativeGap(container, nativeButton) {
+    if (container) {
+      const cs = getComputedStyle(container);
+      const gap = cs.columnGap && cs.columnGap !== 'normal' ? cs.columnGap : cs.gap;
+      if (gap && gap !== 'normal' && gap !== '0px') return gap;
+    }
+
+    if (nativeButton) {
+      const height = parseFloat(getComputedStyle(nativeButton).height);
+      if (Number.isFinite(height) && height > 0) return `${Math.max(8, Math.round(height * 0.3))}px`;
+    }
+
+    return '12px';
+  }
+
+  function syncWrapper(wrapper, nativeButton, controls) {
+    if (!wrapper) return;
+    const reference = nativeButton || findNativeButton(wrapper.closest(HEADER_SELECTOR) || document);
+    wrapper.style.gap = getNativeGap(controls || wrapper.parentElement, reference);
+    wrapper.querySelectorAll(`.${BUTTON_CLASS}`).forEach(button => {
+      registerButton(button);
+      syncButtonWithNative(button, reference);
     });
   }
-  window.addEventListener('resize', updateButtonSizes);
 
-  // Инжект кнопок в зависимости от страницы
+  function updateButtonSizes() {
+    syncButtons.forEach(button => {
+      if (!button.isConnected) {
+        syncButtons.delete(button);
+        return;
+      }
+
+      const wrapper = button.closest(`.${WRAPPER_CLASS}`);
+      const root = (wrapper && wrapper.closest(HEADER_SELECTOR)) || findHeaderRoot();
+      const reference = findNativeButton(root || document);
+      syncButtonWithNative(button, reference);
+
+      if (wrapper) {
+        wrapper.style.gap = getNativeGap(wrapper.parentElement, reference);
+      }
+    });
+  }
+
+  window.addEventListener('resize', updateButtonSizes, { passive: true });
+
+  function removeObsoleteWrappers(kind, id = '') {
+    document.querySelectorAll(`.${WRAPPER_CLASS}`).forEach(wrapper => {
+      const sameKind = wrapper.dataset.mbKind === kind;
+      const sameId = kind !== 'album' || wrapper.dataset.mbAlbumId === String(id);
+      if (!sameKind || !sameId) wrapper.remove();
+    });
+  }
+
+  function getArtistName() {
+    const selectors = [
+      'h1 [class*="PageHeaderTitle_title__"]',
+      'h1[class*="PageHeaderTitle_heading__"]',
+      'h1.page-artist__title.typo-h1.typo-h1_big'
+    ];
+
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      const value = element && element.textContent ? element.textContent.trim() : '';
+      if (value) return value;
+    }
+    return '';
+  }
+
   function injectButtons() {
-    // Альбом
-    if (/\/album\//.test(location.pathname)) {
-        const container =
-              document.querySelector(
-                  'div.PageHeaderBase_controls__HzGgE ' +
-                  '[class^="CommonPageHeader_controlsContainer__"] ' +
-                  '[class^="CommonPageHeader_controls__"]'
-              )
-        || document.querySelector(
-            'div.PageHeaderBase_controls__HzGgE [class^="CommonPageHeader_controls__"]'
-        );
+    if (/\/album\/\d+/.test(location.pathname)) {
+      const albumId = getYandexAlbumIdFromUrl(location.href);
+      if (!albumId) return;
 
-        if (!container) return;
+      removeObsoleteWrappers('album', albumId);
+      const existing = document.querySelector(
+        `.${WRAPPER_CLASS}[data-mb-kind="album"][data-mb-album-id="${albumId}"]`
+      );
+      if (existing) {
+        placeAlbumWrapper(existing);
+        return;
+      }
 
-        const albumId = getYandexAlbumIdFromUrl(location.href);
-        const existing = container.querySelector('.mb-buttons');
-        if (existing) {
-          if (existing.dataset && existing.dataset.mbAlbumId === String(albumId || '')) return;
-          existing.remove();
-        }
-        injectAlbumButtons(container);
+      const cached = albumCache.get(albumId);
+      if (cached) {
+        const wrapper = createAlbumButtons(cached.normalized, albumId, cached.apiUrl);
+        if (!placeAlbumWrapper(wrapper)) wrapper.remove();
+        return;
+      }
+
+      loadAlbumButtons(albumId);
+      return;
     }
-    // Артист (новый UI / старый UI)
-    else if (/\/artist\//.test(location.pathname)) {
-      // сначала ищем новый контейнер артиста
-      let container = document.querySelector(
-        'div.PageHeaderBase_controls__HzGgE > div.PageHeaderArtist_controls__U_6g7'
-      );
-      // fallback на старый
-      if (!container) {
-        container = document.querySelector(
-          'div.PageHeaderBase_controls__HzGgE > .CommonPageHeader_controlsContainer__4_h22 > .CommonPageHeader_controls__c27E_'
-        );
-      }
-      if (!container || container.querySelector('.mb-buttons')) return;
 
-      // имя артиста: пытаемся новый заголовок, иначе старый
-      let name = '';
-      const newHeading = document.querySelector(
-        'h1.PageHeaderTitle_heading__UADXi span.PageHeaderTitle_title__caKyB'
-      );
-      if (newHeading) {
-        name = newHeading.textContent.trim();
-      } else {
-        name = $('h1.page-artist__title.typo-h1.typo-h1_big').first().text().trim();
-      }
+    if (/\/artist\/\d+/.test(location.pathname)) {
+      removeObsoleteWrappers('artist');
+      const name = getArtistName();
       if (!name) return;
-      injectArtistButtons(container, name);
+
+      let wrapper = document.querySelector(`.${WRAPPER_CLASS}[data-mb-kind="artist"]`);
+      if (wrapper && wrapper.dataset.mbArtistName !== name) {
+        wrapper.remove();
+        wrapper = null;
+      }
+      if (!wrapper) wrapper = createArtistButtons(name);
+      if (!placeArtistWrapper(wrapper)) wrapper.remove();
+      return;
     }
+
+    removeObsoleteWrappers('none');
   }
 
-  // --- Альбомная логика: все данные берём из API /albums/{id}/with-tracks ---
-  async function injectAlbumButtons(container) {
-    const albumId = getYandexAlbumIdFromUrl(location.href);
-    if (!albumId) return;
-
-    if (container.dataset.mbAlbumLoading === String(albumId)) return;
-    container.dataset.mbAlbumLoading = String(albumId);
+  async function loadAlbumButtons(albumId) {
+    if (loadingAlbums.has(albumId)) return;
+    loadingAlbums.add(albumId);
 
     const apiUrl = `https://api.music.yandex.net/albums/${encodeURIComponent(albumId)}/with-tracks`;
-    let apiResponse;
     try {
-      apiResponse = await requestJson(apiUrl);
+      const apiResponse = await requestJson(apiUrl);
+      const albumData = apiResponse && (apiResponse.result || apiResponse);
+      if (!albumData || !albumData.id) {
+        throw new Error('Unexpected Yandex API response');
+      }
+
+      const normalized = normalizeYandexAlbum(albumData);
+      albumCache.set(albumId, { normalized, apiUrl });
+
+      // За время запроса пользователь мог перейти на другую страницу.
+      if (getYandexAlbumIdFromUrl(location.href) !== String(albumId)) return;
+
+      const existing = document.querySelector(
+        `.${WRAPPER_CLASS}[data-mb-kind="album"][data-mb-album-id="${albumId}"]`
+      );
+      if (existing) {
+        placeAlbumWrapper(existing);
+        return;
+      }
+
+      const wrapper = createAlbumButtons(normalized, albumId, apiUrl);
+      if (!placeAlbumWrapper(wrapper)) wrapper.remove();
     } catch (err) {
       console.error('[MusicBrainz/Yandex] Failed to fetch album data from Yandex API', err);
-      delete container.dataset.mbAlbumLoading;
-      return;
+    } finally {
+      loadingAlbums.delete(albumId);
     }
+  }
 
-    const albumData = apiResponse && (apiResponse.result || apiResponse);
-    if (!albumData || !albumData.id) {
-      console.error('[MusicBrainz/Yandex] Unexpected Yandex API response', apiResponse);
-      delete container.dataset.mbAlbumLoading;
-      return;
-    }
+  function createAlbumButtons(normalized, albumId, apiUrl) {
+    const wrapper = document.createElement('div');
+    wrapper.className = `mb-buttons ${WRAPPER_CLASS}`;
+    wrapper.dataset.mbKind = 'album';
+    wrapper.dataset.mbAlbumId = String(albumId);
 
-    const normalized = normalizeYandexAlbum(albumData);
-    if (container.querySelector('.mb-buttons')) {
-      delete container.dataset.mbAlbumLoading;
-      return;
-    }
-
-    // создаём форму
     const form = document.createElement('form');
-    form.method        = 'post';
-    form.target        = '_blank';
-    form.action        = 'https://musicbrainz.org/release/add';
+    form.className = 'mbForm';
+    form.method = 'post';
+    form.target = '_blank';
+    form.action = 'https://musicbrainz.org/release/add';
     form.acceptCharset = 'UTF-8';
 
     function addField(name, value) {
-      const inp = document.createElement('input');
-      inp.type  = 'hidden';
-      inp.name  = name;
-      inp.value = value == null ? '' : value;
-      form.appendChild(inp);
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value == null ? '' : value;
+      form.appendChild(input);
     }
 
     buildReleaseFormFromYandexAlbum(form, addField, normalized, apiUrl);
 
-    // контейнер кнопок
-    const wrapper = document.createElement('div');
-    wrapper.className        = 'mb-buttons';
-    wrapper.dataset.mbAlbumId = String(albumId);
-    wrapper.style.display    = 'flex';
-    wrapper.style.gap        = '20px';
-    wrapper.style.alignItems = 'center';
-
-    // Add
-    const wrapForm = document.createElement('div');
-    wrapForm.className = 'mbForm';
-    wrapForm.appendChild(form);
-    const btnAdd = document.createElement('input');
-    btnAdd.type  = 'submit';
-    btnAdd.value = 'Add to MusicBrainz';
-    styleButton(btnAdd);
+    const btnAdd = createActionButton('Add to MusicBrainz', 'submit');
+    btnAdd.title = 'Add release to MusicBrainz';
     form.appendChild(btnAdd);
-    wrapper.appendChild(wrapForm);
+    wrapper.appendChild(form);
 
-    // Search
-    const btnSearch = document.createElement('a');
-    btnSearch.href        = 'https://musicbrainz.org/search?query='
-                              + encodeURIComponent(normalized.title)+'&type=release';
-    btnSearch.target      = '_blank';
-    styleButton(btnSearch);
-    btnSearch.textContent = 'Search on MusicBrainz';
+    const searchUrl = 'https://musicbrainz.org/search?query=' +
+      encodeURIComponent(normalized.title) + '&type=release';
+    const btnSearch = createActionButton('Search on MusicBrainz');
+    btnSearch.title = 'Search release on MusicBrainz';
+    btnSearch.addEventListener('click', () => {
+      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+    });
     wrapper.appendChild(btnSearch);
 
-    container.appendChild(wrapper);
-    syncButtons.push(btnAdd, btnSearch);
-    setTimeout(updateButtonSizes, 0);
-    delete container.dataset.mbAlbumLoading;
+    return wrapper;
   }
 
   function buildReleaseFormFromYandexAlbum(form, addField, normalized, apiUrl) {
@@ -474,57 +710,51 @@
   }
 
   // --- Кнопка на странице артиста ---
-  function injectArtistButtons(container, name) {
-     // override Yandex grid → flex, чтобы можно было переставлять порядок кнопок
-    const cs = getComputedStyle(container);
-    container.style.display    = 'flex';
-    container.style.alignItems = 'center';
-    // подхватим дефолтный gap из grid-стилей, или возьмём 12px
-    container.style.gap        = cs.gap || '12px';
+  function createArtistButtons(name) {
     const wrapper = document.createElement('div');
-    wrapper.className        = 'mb-buttons';
-    wrapper.style.display    = 'flex';
-    wrapper.style.gap        = '20px';
-    wrapper.style.alignItems = 'center';
+    wrapper.className = `mb-buttons ${WRAPPER_CLASS}`;
+    wrapper.dataset.mbKind = 'artist';
+    wrapper.dataset.mbArtistName = name;
 
-    const btn = document.createElement('a');
-    btn.href        = 'https://musicbrainz.org/search?query='
-                     + encodeURIComponent(name)
-                     + '&type=artist';
-    btn.target      = '_blank';
-    btn.textContent = 'Search Artist on MusicBrainz';
-    styleButton(btn);
+    const searchUrl = 'https://musicbrainz.org/search?query=' +
+      encodeURIComponent(name) + '&type=artist';
+    const button = createActionButton('Search Artist on MusicBrainz');
+    button.title = 'Search artist on MusicBrainz';
+    button.addEventListener('click', () => {
+      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+    });
 
-    wrapper.appendChild(btn);
-    container.prepend(wrapper);
-    syncButtons.push(btn);
-    setTimeout(updateButtonSizes, 0);
+    wrapper.appendChild(button);
+    return wrapper;
   }
 
-  // Универсальная стилизация кнопок
-  function styleButton(el) {
-    el.style.backgroundColor = '#ffcc33';
-    el.style.border          = 'none';
-    el.style.outline         = 'none';
-    el.style.borderRadius    = '20px';
-    el.style.color           = '#121212';
-    el.style.cursor          = 'pointer';
-    el.style.textDecoration  = 'none';
-    el.style.transition      = 'background-color 0.3s ease';
-    el.addEventListener('mouseover', ()=>el.style.backgroundColor='#ffd966');
-    el.addEventListener('mouseout',  ()=>el.style.backgroundColor='#ffcc33');
+  function scheduleInject(delay = 60) {
+    if (injectScheduled) return;
+    injectScheduled = true;
+    window.setTimeout(() => {
+      injectScheduled = false;
+      injectButtons();
+      updateButtonSizes();
+    }, delay);
   }
 
-  // Запуск и отслеживание SPA-навигации
+  // Запуск и отслеживание SPA-навигации.
   injectButtons();
-  new MutationObserver(injectButtons).observe(document.body, { childList: true, subtree: true });
-  ['pushState','replaceState'].forEach(m=>{
-    const orig = history[m];
-    history[m] = function(){
-      const ret = orig.apply(this,arguments);
-      setTimeout(injectButtons,100);
-      return ret;
+  updateButtonSizes();
+
+  new MutationObserver(() => scheduleInject(80)).observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  ['pushState', 'replaceState'].forEach(method => {
+    const original = history[method];
+    history[method] = function() {
+      const result = original.apply(this, arguments);
+      scheduleInject(50);
+      return result;
     };
   });
-  window.addEventListener('popstate', ()=>setTimeout(injectButtons,100));
+
+  window.addEventListener('popstate', () => scheduleInject(50));
 })();
