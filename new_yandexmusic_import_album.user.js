@@ -2,7 +2,7 @@
 
 // @name        MusicBrainz: Import and Search from Yandex Music (new design)
 // @description Для импорта альбомов, книг и поиска исполнителей.
-// @version     2025.01.00.32.9
+// @version     2025.01.00.32.11
 // @author      Druidblack
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
 //
@@ -391,7 +391,7 @@
     form.className = 'mbForm';
     form.method = 'post';
     form.target = '_blank';
-    form.action = 'https://musicbrainz.org/release/add';
+    form.action = 'https://musicbrainz.org/release/add?skip_confirmation=1';
     form.acceptCharset = 'UTF-8';
 
     function addField(name, value) {
@@ -462,7 +462,7 @@
 
     if (normalized.annotation) addField('annotation', normalized.annotation);
     addField('edit_note','Imported from: '+normalized.sourceUrl+' using metadata API: '+apiUrl+' and script from https://github.com/Druidblack/MusicBrainz-UserScripts/blob/main/new_yandexmusic_import_album.user.js');
-    addField('urls.0.link_type','980');
+    addField('urls.0.link_type','85');
     addField('urls.0.url', normalized.sourceUrl);
   }
 
