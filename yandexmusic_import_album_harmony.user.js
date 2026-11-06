@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Yandex Music → Deezer → Harmony (Album Finder)
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
-// @version      1.4.2
+// @version      1.4.3
 // @description  On the album page, Yandex Music searches for a release in Deezer and opens Harmony;
 // @author       Druidblack
 // @match        https://music.yandex.ru/*
@@ -186,7 +186,10 @@
   ];
 
   function getNativeButtons() {
+    // Сначала берём кнопки именно из шапки страницы, а не из глобального плеера.
+    // Такой же контейнер использует соседний MusicBrainz userscript.
     const scopes = [
+      document.querySelector('[class*="PageHeaderBase_controls__"]'),
       document.querySelector('main'),
       document.querySelector('[role="main"]'),
       document
@@ -214,26 +217,39 @@
     btn.style.removeProperty('margin');
   }
 
+  // Важно: у других userscript могут быть собственные кнопки в том же ряду.
+  // MusicBrainz держит свой wrapper НЕПОСРЕДСТВЕННО перед «Трейлером»
+  // (а если трейлера нет — НЕПОСРЕДСТВЕННО после «Воспроизведение»).
+  // Не требуем смежности с этими кнопками: иначе два MutationObserver
+  // бесконечно двигают элементы друг друга.
+  function isBefore(left, right) {
+    return Boolean(left && right &&
+      (left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_FOLLOWING));
+  }
+
   function placeButtonInline() {
     ensureButton();
     const { playBtn, trailerBtn } = getNativeButtons();
 
-    // Перед «Трейлером», когда обе кнопки относятся к шапке альбома.
     if (playBtn && trailerBtn && trailerBtn.parentElement) {
       const parent = trailerBtn.parentElement;
-      if (btn.parentElement !== parent || btn.nextElementSibling !== trailerBtn) {
-        parent.insertBefore(btn, trailerBtn);
-      }
+      // Позиция корректна, если Harmony находится между нативными кнопками,
+      // даже когда между нами и «Трейлером» есть чужие кнопки или обёртки.
+      const alreadyPlaced = btn.parentElement === parent &&
+        isBefore(btn, trailerBtn) &&
+        (playBtn.parentElement !== parent || isBefore(playBtn, btn));
+      if (!alreadyPlaced) parent.insertBefore(btn, trailerBtn);
       btn.classList.remove('ym2deezer--floating');
       syncShapeWithNativeButton(trailerBtn);
       return true;
     }
 
-    // Без трейлера — сразу за «Слушать».
     if (playBtn && playBtn.parentElement) {
-      if (btn.parentElement !== playBtn.parentElement || playBtn.nextElementSibling !== btn) {
-        playBtn.insertAdjacentElement('afterend', btn);
-      }
+      const parent = playBtn.parentElement;
+      // MusicBrainz может вставить свой wrapper сразу после playBtn.
+      // Не вытесняем его оттуда, если наша кнопка уже стоит правее.
+      const alreadyPlaced = btn.parentElement === parent && isBefore(playBtn, btn);
+      if (!alreadyPlaced) playBtn.insertAdjacentElement('afterend', btn);
       btn.classList.remove('ym2deezer--floating');
       syncShapeWithNativeButton(playBtn);
       return true;
