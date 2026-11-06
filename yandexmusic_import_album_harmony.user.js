@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         Yandex Music → Deezer → Harmony (Album Finder)
 // @namespace   https://github.com/Druidblack/MusicBrainz-UserScripts
-// @version      1.4.1
+// @version      1.4.2
 // @description  On the album page, Yandex Music searches for a release in Deezer and opens Harmony;
 // @author       Druidblack
-// @match        https://music.yandex.ru/album/*
+// @match        https://music.yandex.ru/*
+// @run-at       document-idle
 // @grant        GM_xmlhttpRequest
 // @grant        GM_addStyle
 // @connect      api.music.yandex.net
@@ -103,13 +104,19 @@
   let btn = null;
 
   function ensureButton() {
-    if (btn) return btn;
+    // В SPA React может удалить целый контейнер вместе с нашей кнопкой.
+    // Ссылка btn при этом остаётся, поэтому проверяем присутствие в DOM.
+    if (btn) {
+      if (!btn.isConnected && document.body) document.body.appendChild(btn);
+      return btn;
+    }
 
     // Используем настоящий button, как и стандартные элементы интерфейса.
     btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'ym2deezer-btn ym2deezer--searching ym2deezer--floating';
     btn.dataset.href = '';
+    btn.dataset.albumId = '';
     btn.title = 'Open in Harmony (via Deezer)';
     btn.setAttribute('aria-label', 'Open in Harmony via Deezer');
     btn.setAttribute('aria-disabled', 'true');
@@ -124,7 +131,8 @@
       event.stopPropagation();
 
       const href = btn.dataset.href;
-      if (!href) return;
+      // При очень быстрой навигации не открываем ссылку от прошлого альбома.
+      if (!href || btn.dataset.albumId !== getAlbumIdFromUrl(location.href)) return;
       window.open(href, '_blank', 'noopener,noreferrer');
     });
 
@@ -147,13 +155,11 @@
     btn.setAttribute('aria-disabled', btn.dataset.href ? 'false' : 'true');
   }
 
-  // показать/скрыть на не-альбомных страницах
-  const isAlbumPage = () => /^\/album\/\d+/.test(location.pathname);
-
   function hideButton() {
     if (!btn) return;
     btn.classList.add('ym2deezer--hidden');
     btn.dataset.href = '';
+    btn.dataset.albumId = '';
     btn.setAttribute('aria-disabled', 'true');
     const badge = btn.querySelector('.ym2deezer-badge');
     if (badge) badge.textContent = '';
@@ -165,16 +171,57 @@
   }
 
   // ---------- Placement ----------
+  // На страницах с разными макетами сначала ищем кнопки в основной
+  // области, чтобы не спутать их с глобальным музыкальным плеером.
+  const PLAY_LABELS = ['Воспроизведение', 'Слушать', 'Play', 'Listen'];
+  const TRAILER_LABELS = ['Запустить трейлер', 'Play trailer'];
+  const SHAPE_PROPERTIES = [
+    'box-sizing', 'height', 'min-height', 'max-height',
+    'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    'border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width',
+    'border-top-style', 'border-right-style', 'border-bottom-style', 'border-left-style',
+    'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color',
+    'border-radius', 'box-shadow', 'font-family', 'font-size', 'font-weight',
+    'font-style', 'line-height', 'letter-spacing', 'text-transform'
+  ];
+
+  function getNativeButtons() {
+    const scopes = [
+      document.querySelector('main'),
+      document.querySelector('[role="main"]'),
+      document
+    ].filter(Boolean);
+
+    for (const scope of scopes) {
+      const matches = [...scope.querySelectorAll('button[aria-label]')]
+        .filter(el => el !== btn && el.isConnected && el.getClientRects().length);
+      const playBtn = matches.find(el => PLAY_LABELS.includes(el.getAttribute('aria-label')));
+      const trailerBtn = matches.find(el => TRAILER_LABELS.includes(el.getAttribute('aria-label')));
+      if (playBtn || trailerBtn) return { playBtn, trailerBtn };
+    }
+    return { playBtn: null, trailerBtn: null };
+  }
+
+  function setFloatingMode() {
+    if (!btn || btn.classList.contains('ym2deezer--floating') && btn.parentElement === document.body) return;
+
+    // В режиме fallback кнопка живёт прямо в body, а не в контейнере,
+    // который React может скрыть или удалить при смене страницы.
+    if (btn.parentElement !== document.body) document.body.appendChild(btn);
+    const ownClasses = [...btn.classList].filter(name => name.startsWith('ym2deezer'));
+    btn.className = [...new Set([...ownClasses, 'ym2deezer--floating'])].join(' ');
+    for (const property of SHAPE_PROPERTIES) btn.style.removeProperty(property);
+    btn.style.removeProperty('margin');
+  }
+
   function placeButtonInline() {
     ensureButton();
+    const { playBtn, trailerBtn } = getNativeButtons();
 
-    const playBtn    = document.querySelector('button[aria-label="Воспроизведение"]');
-    const trailerBtn = document.querySelector('button[aria-label="Запустить трейлер"]');
-
-    // Вставка строго перед «Трейлер».
+    // Перед «Трейлером», когда обе кнопки относятся к шапке альбома.
     if (playBtn && trailerBtn && trailerBtn.parentElement) {
       const parent = trailerBtn.parentElement;
-      if (btn.parentElement !== parent || btn.nextSibling !== trailerBtn) {
+      if (btn.parentElement !== parent || btn.nextElementSibling !== trailerBtn) {
         parent.insertBefore(btn, trailerBtn);
       }
       btn.classList.remove('ym2deezer--floating');
@@ -182,9 +229,9 @@
       return true;
     }
 
-    // Если «Трейлер» нет — ставим сразу после «Слушать».
+    // Без трейлера — сразу за «Слушать».
     if (playBtn && playBtn.parentElement) {
-      if (playBtn.nextSibling !== btn) {
+      if (btn.parentElement !== playBtn.parentElement || playBtn.nextElementSibling !== btn) {
         playBtn.insertAdjacentElement('afterend', btn);
       }
       btn.classList.remove('ym2deezer--floating');
@@ -192,69 +239,31 @@
       return true;
     }
 
-    // Фолбэк — плавающая кнопка.
-    btn.classList.add('ym2deezer--floating');
+    // Если шапка ещё загружается, не оставляем кнопку в старом/удалённом DOM.
+    setFloatingMode();
     return false;
   }
 
-  // Берём классы и геометрию соседней нативной кнопки Яндекс Музыки.
-  function syncShapeWithNativeButton(referenceBtn = null) {
-    if (!btn) return;
+  function syncShapeWithNativeButton(referenceBtn) {
+    if (!btn || !referenceBtn || !referenceBtn.isConnected) return;
 
-    const playBtn = document.querySelector('button[aria-label="Воспроизведение"]');
-    const trailerBtn = document.querySelector('button[aria-label="Запустить трейлер"]');
-    const ref = referenceBtn || trailerBtn || playBtn;
-    if (!ref || ref === btn) return;
+    // Классы CSS Modules могут измениться после навигации.
+    const ownClasses = [...btn.classList].filter(name => name.startsWith('ym2deezer'));
+    const nativeClasses = [...referenceBtn.classList].filter(name => !name.startsWith('ym2deezer'));
+    const className = [...nativeClasses, ...ownClasses].join(' ');
+    if (btn.className !== className) btn.className = className;
 
-    // CSS-модули Яндекс Музыки используют динамические имена классов.
-    // Копируем их с соседней кнопки, сохраняя собственные state-классы.
-    const ownClasses = Array.from(btn.classList).filter((name) => name.startsWith('ym2deezer'));
-    const nativeClasses = Array.from(ref.classList).filter((name) => !name.startsWith('ym2deezer'));
-    btn.className = [...nativeClasses, ...ownClasses].join(' ');
-
-    const cs = getComputedStyle(ref);
-    const shapeProperties = [
-      'box-sizing',
-      'height',
-      'min-height',
-      'max-height',
-      'padding-top',
-      'padding-right',
-      'padding-bottom',
-      'padding-left',
-      'border-top-width',
-      'border-right-width',
-      'border-bottom-width',
-      'border-left-width',
-      'border-top-style',
-      'border-right-style',
-      'border-bottom-style',
-      'border-left-style',
-      'border-top-color',
-      'border-right-color',
-      'border-bottom-color',
-      'border-left-color',
-      'border-radius',
-      'box-shadow',
-      'font-family',
-      'font-size',
-      'font-weight',
-      'font-style',
-      'line-height',
-      'letter-spacing',
-      'text-transform'
-    ];
-
-    for (const property of shapeProperties) {
-      btn.style.setProperty(property, cs.getPropertyValue(property));
+    const computed = getComputedStyle(referenceBtn);
+    for (const property of SHAPE_PROPERTIES) {
+      const value = computed.getPropertyValue(property);
+      if (btn.style.getPropertyValue(property) !== value) {
+        btn.style.setProperty(property, value);
+      }
     }
-
-    // Родительский контейнер сам задаёт расстояние между кнопками через gap.
-    btn.style.margin = '0';
+    if (btn.style.margin !== '0px') btn.style.margin = '0';
   }
 
   // ---------- Helpers ----------
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
   const getAlbumIdFromUrl = (url) => (url.match(/\/album\/(\d+)(?:[/?#]|$)/) || [])[1] || null;
   const normalize = (str) => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -351,8 +360,10 @@
   }
 
   // ---------- Core ----------
-  async function processAlbum(albumId) {
-    setButtonState({ state: 'ym2deezer--searching', text: 'Searching…', href: '#' });
+  async function processAlbum(albumId, requestId) {
+    // Результаты старого запроса нельзя отображать после перехода на другой альбом.
+    const isCurrent = () => requestId === activeRequestId
+      && getAlbumIdFromUrl(location.href) === albumId;
 
     // 1) Яндекс API
     let res;
@@ -361,18 +372,20 @@
       res = ya?.result;
     } catch (e) {
       console.warn('[YM→DZ] Yandex API error:', e);
-      setButtonState({ state: 'ym2deezer--error', text: 'Yandex API error', href: '#' });
+      if (isCurrent()) setButtonState({ state: 'ym2deezer--error', text: 'Yandex API error', href: '#' });
       return;
     }
 
+    if (!isCurrent()) return;
+
     const title = res?.title || '';
-       const year  = res?.year || '';
+    const year  = res?.year || '';
     const artistName = Array.isArray(res?.artists) && res.artists.length
       ? res.artists.map(a => a.name).join(', ')
       : '';
 
     if (!title || !artistName) {
-      setButtonState({ state: 'ym2deezer--error', text: 'No title/artist', href: '#' });
+      if (isCurrent()) setButtonState({ state: 'ym2deezer--error', text: 'No title/artist', href: '#' });
       return;
     }
 
@@ -391,6 +404,8 @@
     } catch (e) {
       console.warn('[YM→DZ] Deezer API error:', e);
     }
+
+    if (!isCurrent()) return;
 
     // 3) Ранжирование совпадений
     let deezerLink = null;
@@ -436,51 +451,78 @@
   }
 
   // ---------- SPA watcher ----------
-  let lastProcessedHref = null;
-  async function routerLoop() {
-    while (true) {
-      const href = location.href;
-      if (href !== lastProcessedHref) {
-        lastProcessedHref = href;
+  // Состояние страницы и состояние сетевого запроса разделены.
+  // Проверка выполняется сразу после DOM-перерисовки, а интервал служит
+  // страховкой для переходов History API без события popstate.
+  let activeAlbumId = null;
+  let activeRequestId = 0;
+  let syncTimer = null;
 
-        const id = getAlbumIdFromUrl(href);
-        if (id) {
-          ensureButton();
-          showButton();
-          // Подождём рендер и вставим между «Слушать» и «Трейлер»
-          for (let i = 0; i < 20; i++) {
-            const placed = placeButtonInline();
-            if (placed) break;
-            await sleep(100);
-          }
-          syncShapeWithNativeButton();
-          processAlbum(id);
-        } else {
-          // Не страница альбома — прячем кнопку
-          hideButton();
-        }
-      } else {
-        // Поддерживаем позицию и форму только на страницах альбома
-        if (isAlbumPage()) {
-          placeButtonInline();
-          syncShapeWithNativeButton();
-        } else {
-          hideButton();
-        }
+  function syncPage() {
+    const albumId = getAlbumIdFromUrl(location.href);
+
+    if (!albumId) {
+      if (activeAlbumId !== null) {
+        activeAlbumId = null;
+        ++activeRequestId; // отмена публикации результата предыдущего альбома
       }
-      await sleep(300);
+      if (btn) {
+        // На не-альбомных страницах кнопка должна быть только скрыта,
+        // без вмешательства в чужой React-контейнер.
+        setFloatingMode();
+        hideButton();
+      }
+      return;
     }
+
+    ensureButton(); // восстанавливаем потерянную кнопку, даже если URL не изменился
+    showButton();
+    btn.dataset.albumId = albumId;
+
+    if (albumId !== activeAlbumId) {
+      activeAlbumId = albumId;
+      const requestId = ++activeRequestId;
+      setButtonState({ state: 'ym2deezer--searching', text: 'Searching…', href: '' });
+      // Обработка идёт параллельно рендеру. Больше нет задержки поиска на 2 секунды.
+      processAlbum(albumId, requestId).catch(error => {
+        console.warn('[YM→DZ] Unexpected album processing error:', error);
+        if (requestId === activeRequestId && getAlbumIdFromUrl(location.href) === albumId) {
+          setButtonState({ state: 'ym2deezer--error', text: 'Search error', href: '' });
+        }
+      });
+    }
+
+    // Поправляем положение при каждом изменении DOM, даже если тот же альбом.
+    placeButtonInline();
   }
 
-  window.addEventListener('resize', () => {
-    // при изменении размеров подровняем форму под «Слушать»
-    if (isAlbumPage()) syncShapeWithNativeButton();
+  function scheduleSync(delay = 60) {
+    if (syncTimer !== null) return;
+    syncTimer = setTimeout(() => {
+      syncTimer = null;
+      syncPage();
+    }, delay);
+  }
+
+  // Отслеживаем удаление контейнеров и появление новой шапки альбома.
+  // Изменения ВНУТРИ нашей кнопки игнорируются, чтобы не создавать цикл.
+  const observer = new MutationObserver(records => {
+    if (records.some(record => !btn || !btn.contains(record.target))) {
+      scheduleSync();
+    }
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.addEventListener('popstate', () => scheduleSync(0));
+  window.addEventListener('hashchange', () => scheduleSync(0));
+  window.addEventListener('pageshow', () => scheduleSync(0));
+  window.addEventListener('resize', () => scheduleSync(0));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) scheduleSync(0);
   });
 
-  // ---------- Start ----------
-  ensureButton();
-  // моментальная реакция при первой загрузке
-  if (!isAlbumPage()) hideButton();
-  routerLoop();
-
+  // Некоторые переходы Яндекс Музыки не вызывают обычных событий навигации.
+  // Редкая проверка URL + DOM страхует и от этих случаев.
+  setInterval(syncPage, 750);
+  syncPage();
 })();
